@@ -18,6 +18,8 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
     Optional<UserEntity> findByLoginId(String loginId); // 로그인 아이디로 특정 사용자 추출
 
+    Optional<UserEntity> findByEmail(String email);
+
     // 사용자 이름과 연락처로 특정 사용자 추출
     @Query(value = "SELECT u FROM UserEntity u WHERE u.name = ?1 AND u.phone = ?2")
     Optional<UserEntity> findByNameAndPhone(String name, String phone);

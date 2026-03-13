@@ -47,7 +47,13 @@ public class UserEntity {
     @Column(name = "REFRESH_TOKEN")
     private String refreshToken;
 
-    @Column(
+    @Column(unique=true)
+    private String email;
+
+    @Column
+    private String provider; // 가입 경로 (예: "local", "google", "kakao")
+
+     @Column(
             name = "ADMIN_FLAG",
             nullable = false,
             columnDefinition = "CHAR(1)"
