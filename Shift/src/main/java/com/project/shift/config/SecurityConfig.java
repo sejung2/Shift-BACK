@@ -4,7 +4,10 @@ import com.project.shift.global.AuthEntryPoint;
 import com.project.shift.global.filter.AuthenticationFilter;
 import com.project.shift.global.oauth2.OAuth2SuccessHandler;
 import com.project.shift.user.service.UserDetailsServiceImpl;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -16,7 +19,6 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -30,6 +32,7 @@ import java.util.Arrays;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
+    private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 
     @Value("${cors.allowed-origins}")
     private String allowedOrigins;
@@ -38,10 +41,11 @@ public class SecurityConfig {
     private final AuthenticationFilter authenticationFilter;
     private final AuthEntryPoint exceptionHandler;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
     public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(userDetailsService).passwordEncoder(new BCryptPasswordEncoder());
+        auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder);
     }
 
     @Bean
@@ -53,7 +57,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf((csrf) -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .sessionManagement((session) -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement((session) -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests((authorizeHttpRequests) -> authorizeHttpRequests
                         // preflight 요청 허용
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
@@ -66,8 +70,10 @@ public class SecurityConfig {
                 .oauth2Login(oauth2 -> {
                     oauth2.successHandler(oAuth2SuccessHandler);
                     oauth2.failureHandler((request, response, exception) -> {
-                        System.out.println("OAuth2 로그인 실패: " + exception.getMessage());
-                        exception.printStackTrace();
+                        logger.error("OAuth2 로그인 실패: " + exception.getMessage(), exception);
+                        if (!response.isCommitted()) {
+                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "OAuth2 authentication failed");
+                        }
                     });
                 })
                 .addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class)
@@ -89,10 +95,5 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
     }
 }

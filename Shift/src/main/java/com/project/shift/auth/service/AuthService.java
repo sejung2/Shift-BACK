@@ -5,28 +5,28 @@ import com.project.shift.auth.dto.LoginRequestDTO;
 import com.project.shift.auth.dto.LoginResponseDTO;
 import com.project.shift.global.jwt.JwtService;
 import com.project.shift.user.entity.UserEntity;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class AuthService {
 
     private final AuthDAO authDao;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
-
-    public AuthService(AuthDAO authDao, JwtService jwtService, AuthenticationManager authenticationManager) {
-        this.authDao = authDao;
-        this.jwtService = jwtService;
-        this.authenticationManager = authenticationManager;
-    }
+    private final PasswordEncoder passwordEncoder;
 
     // 로그인
     @Transactional
@@ -66,9 +66,9 @@ public class AuthService {
     public void logout() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Long userId = Long.parseLong(auth.getName());
-        
+
         log.info("[AUTH] 로그아웃 시작 UserId: {}", userId);
-        
+
         // DB의 리프레시 토큰 삭제
         authDao.updateRefreshToken(userId);
 
@@ -87,15 +87,19 @@ public class AuthService {
         // DB의 정보와 같은지 체크
         UserEntity foundUser = validateUserByToken(userId, refreshToken);
 
-        // 토큰 재발급 실행
-        String newAccessToken = jwtService.createAccessToken(foundUser.getUserId(), foundUser.getName());
-        String newRefreshToken = jwtService.createRefreshToken(foundUser.getUserId());
+        LoginResponseDTO tokens = createLoginResponse(foundUser);
 
-        // DB값 갱신
-        foundUser.setRefreshToken(newRefreshToken);
-        authDao.updateUser(foundUser);
+        return new LoginResponseDTO(tokens.accessToken(), tokens.refreshToken());
+    }
 
-        return new LoginResponseDTO(newAccessToken, newRefreshToken);
+    private LoginResponseDTO createLoginResponse(UserEntity user) {
+        String accessToken = jwtService.createAccessToken(user.getUserId(), user.getName());
+        String refreshToken = jwtService.createRefreshToken(user.getUserId());
+
+        user.setRefreshToken(refreshToken);
+        authDao.updateUser(user);
+
+        return new LoginResponseDTO(accessToken, refreshToken);
     }
 
     private void validateRefreshToken(String refreshToken) {
