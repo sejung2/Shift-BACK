@@ -1,16 +1,5 @@
 package com.project.shift.product.service;
 
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.project.shift.product.dao.IReviewDAO;
 import com.project.shift.product.dto.ReviewDTO;
 import com.project.shift.product.dto.ReviewOriginDTO;
@@ -19,9 +8,18 @@ import com.project.shift.product.dto.UserReviewDetailProjection;
 import com.project.shift.product.entity.Review;
 import com.project.shift.product.entity.ReviewOriginEntity;
 import com.project.shift.product.repository.ReviewEntityRepository;
-import com.project.shift.user.dao.IUserDAO;
-
+import com.project.shift.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * [SERVICE-003] 리뷰 관련 비즈니스 로직 처리 클래스
@@ -35,7 +33,7 @@ import lombok.RequiredArgsConstructor;
 public class ReviewService implements IReviewService {
 
     private final IReviewDAO reviewDAO;
-    private final IUserDAO userDAO;
+    private final UserRepository userRepository;
     private final ReviewEntityRepository reviewEntityRepository;
 
 
@@ -47,7 +45,7 @@ public class ReviewService implements IReviewService {
 
         return reviews.stream().map(review -> ReviewDTO.builder()
                 .reviewId(review.getId())
-                .userName(userDAO.findById(review.getUser().getUserId())
+                .userName(userRepository.findById(review.getUser().getUserId())
                         .map(u -> u.getName())
                         .orElse("탈퇴한 회원"))
                 .rating(review.getRating())

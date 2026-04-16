@@ -8,13 +8,13 @@ import com.project.shift.product.entity.Product;
 import com.project.shift.shop.dao.IDeliveryDAO;
 import com.project.shift.shop.dao.IOrderDAO;
 import com.project.shift.shop.dto.gift.GiftDetailResponseDTO;
-import com.project.shift.shop.dto.gift.GiftListResponseDTO;
 import com.project.shift.shop.dto.gift.GiftItemDetailDTO;
+import com.project.shift.shop.dto.gift.GiftListResponseDTO;
 import com.project.shift.shop.entity.Delivery;
 import com.project.shift.shop.entity.Order;
 import com.project.shift.shop.entity.OrderItem;
-import com.project.shift.user.dao.IUserDAO;
 import com.project.shift.user.entity.UserEntity;
+import com.project.shift.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,7 +27,7 @@ public class GiftService implements IGiftService {
 
     private final IOrderDAO orderDAO;
     private final IProductDAO productDAO;
-    private final IUserDAO userDAO;
+    private final UserRepository userRepository;
     private final IImageDAO imageDAO;
     private final IDeliveryDAO deliveryDAO;
     private final IReviewDAO reviewDAO;
@@ -187,7 +187,7 @@ public class GiftService implements IGiftService {
         }
 
         // user 정보 조회
-        String senderName = userDAO.findById(senderId)
+        String senderName = userRepository.findById(senderId)
                 .map(UserEntity::getName).orElse("탈퇴한 회원");
 
         // 배송지 정보 조회
@@ -236,7 +236,7 @@ public class GiftService implements IGiftService {
     private Map<Long, String> getUserNameMap(Set<Long> userIds) {
         Map<Long, String> userNameMap = new HashMap<>();
         for (Long id : userIds) {
-            userDAO.findById(id).ifPresent(u ->
+            userRepository.findById(id).ifPresent(u ->
                     userNameMap.put(id, u.getName())
             );
         }
