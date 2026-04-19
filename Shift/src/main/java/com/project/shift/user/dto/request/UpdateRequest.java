@@ -10,6 +10,7 @@ public record UpdateRequest(
         @Pattern(regexp = "^[가-힣\\s]+$", message = "이름은 한글만 사용할 수 있습니다.")
         String name,
 
+        @NotBlank(message = "연락처를 입력해야 합니다.")
         @Pattern(regexp = "^[0-9]{11}$", message = "연락처는 11자리 숫자만 입력 가능합니다.")
         String phone,
 
