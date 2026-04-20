@@ -3,8 +3,14 @@ package com.project.shift.auth.service;
 import com.project.shift.auth.dao.AuthDAO;
 import com.project.shift.auth.dto.LoginRequestDTO;
 import com.project.shift.auth.dto.LoginResponseDTO;
+import com.project.shift.auth.entity.RefreshTokenEntity;
+import com.project.shift.auth.repository.RefreshTokenRepository;
+import com.project.shift.global.exception.NotFoundException;
 import com.project.shift.global.jwt.JwtService;
+import com.project.shift.global.security.CurrentUser;
 import com.project.shift.user.entity.UserEntity;
+import com.project.shift.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -14,19 +20,18 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class AuthService {
 
     private final AuthDAO authDao;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
-
-    public AuthService(AuthDAO authDao, JwtService jwtService, AuthenticationManager authenticationManager) {
-        this.authDao = authDao;
-        this.jwtService = jwtService;
-        this.authenticationManager = authenticationManager;
-    }
+    private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     // 로그인
     @Transactional
@@ -41,10 +46,8 @@ public class AuthService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         // dto -> entity로 변환
-        UserEntity userEntity = UserEntity.builder()
-                .loginId(loginInfo.loginId())
-                .build();
-        UserEntity foundUser = authDao.getUser(userEntity);
+        UserEntity foundUser = userRepository.findByLoginId(loginInfo.loginId())
+                .orElseThrow(() -> new NotFoundException("[AUTH] 사용자를 찾을 수 없습니다."));
 
         Long userId = foundUser.getUserId();
         String name = foundUser.getName();
@@ -53,9 +56,19 @@ public class AuthService {
 
         String accessToken = jwtService.createAccessToken(userId, name);
         String refreshToken = jwtService.createRefreshToken(userId);
+        LocalDateTime expiredAt = jwtService.getRefreshTokenExpiration();
 
-        foundUser.setRefreshToken(refreshToken);
-        authDao.updateUser(foundUser);
+        refreshTokenRepository.findByUser_UserId(userId)
+                .ifPresentOrElse(
+                        existingToken -> existingToken.refreshToken(refreshToken, expiredAt),
+                        () -> refreshTokenRepository.save(
+                                RefreshTokenEntity.builder()
+                                        .userEntity(foundUser)
+                                        .tokenValue(refreshToken)
+                                        .expiredAt(expiredAt)
+                                        .build()
+                        )
+                );
 
         log.info("[AUTH] 리프레시 토큰 갱신 완료 UserId: {}", userId);
 
@@ -64,13 +77,14 @@ public class AuthService {
 
     @Transactional
     public void logout() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        Long userId = Long.parseLong(auth.getName());
-        
+        Long userId = CurrentUser.getUserId();
+
         log.info("[AUTH] 로그아웃 시작 UserId: {}", userId);
-        
+
         // DB의 리프레시 토큰 삭제
-        authDao.updateRefreshToken(userId);
+        refreshTokenRepository.deleteByUser_UserId(userId);
+
+        SecurityContextHolder.clearContext();
 
         log.info("[AUTH] 로그아웃 완료 UserId: {}", userId);
     }
@@ -84,16 +98,23 @@ public class AuthService {
         // 토큰의 값(userId)이 서로 일치하는지 체크
         Long userId = validateTokenPair(accessToken, refreshToken);
 
-        // DB의 정보와 같은지 체크
-        UserEntity foundUser = validateUserByToken(userId, refreshToken);
+        // RefreshTokenEntity에서 검증
+        RefreshTokenEntity storedToken = refreshTokenRepository.findByUser_UserId(userId)
+                .orElseThrow(() -> new BadCredentialsException("[SYSTEM] 저장된 리프레시 토큰이 없습니다."));
 
-        // 토큰 재발급 실행
+        if (!storedToken.getTokenValue().equals(refreshToken)) {
+            throw new BadCredentialsException("[SYSTEM] 리프레시 토큰이 일치하지 않습니다.");
+        }
+
+        UserEntity foundUser = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("[AUTH] 사용자를 찾을 수 없습니다."));
+
         String newAccessToken = jwtService.createAccessToken(foundUser.getUserId(), foundUser.getName());
         String newRefreshToken = jwtService.createRefreshToken(foundUser.getUserId());
+        LocalDateTime newExpiredAt = jwtService.getRefreshTokenExpiration();
 
-        // DB값 갱신
-        foundUser.setRefreshToken(newRefreshToken);
-        authDao.updateUser(foundUser);
+        // 토큰 갱신
+        storedToken.refreshToken(newRefreshToken, newExpiredAt);
 
         return new LoginResponseDTO(newAccessToken, newRefreshToken);
     }
@@ -122,16 +143,5 @@ public class AuthService {
             throw new BadCredentialsException("[SYSTEM] 토큰이 서로 일치하지 않습니다.");
         }
         return userIdFromRefresh;
-    }
-
-    private UserEntity validateUserByToken(Long userId, String refreshToken) {
-        // userId로 사용자 조회
-        UserEntity foundUser = authDao.getUserById(userId);
-
-        if (foundUser == null || !refreshToken.equals(foundUser.getRefreshToken())) {
-            throw new BadCredentialsException("[SYSTEM] 리프레시 토큰이 저장된 리프레시 토큰과 일치하지 않습니다.");
-        }
-
-        return foundUser;
     }
 }
