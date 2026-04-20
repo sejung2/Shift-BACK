@@ -10,6 +10,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 
 @Component
@@ -58,6 +60,11 @@ public class JwtService {
                 .setExpiration(new Date(System.currentTimeMillis() + refreshTokenValidityMs))
                 .signWith(secretKey, signatureAlgorithm)
                 .compact();
+    }
+
+    // Token 만료 시간 계산
+    public LocalDateTime getRefreshTokenExpiration() {
+        return LocalDateTime.now().plus(refreshTokenValidityMs, ChronoUnit.MILLIS);
     }
 
     // 헤더에서 토큰 추출
