@@ -1,9 +1,12 @@
 package com.project.shift.auth.controller;
 
-import com.project.shift.auth.dto.LoginRequestDTO;
-import com.project.shift.auth.dto.LoginResponseDTO;
+import com.project.shift.auth.dto.request.LoginRequest;
+import com.project.shift.auth.dto.response.LoginResponse;
 import com.project.shift.auth.service.AuthService;
+import com.project.shift.global.exception.BadRequestException;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -15,6 +18,7 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequestMapping("/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
     private final String HEADER = "Authorization";
@@ -22,45 +26,18 @@ public class AuthController {
 
     private final AuthService authService;
 
-    public AuthController(AuthService authService) {
-        this.authService = authService;
-    }
-
     // 로그인 기능
     @PostMapping("/login")
-    public ResponseEntity<?> userLogin(@RequestBody LoginRequestDTO request, HttpServletResponse response) {
+    public ResponseEntity<?> userLogin(@RequestBody @Valid LoginRequest request, HttpServletResponse response) {
         log.info("[AUTH] 로그인 시도 User ID: {}", request.loginId());
-        // 기본 검증
-        idValidate(request.loginId());
-        passwordValidate(request.password());
 
-        LoginResponseDTO tokens = authService.login(request);
+        LoginResponse tokens = authService.login(request);
         log.info("[AUTH] 로그인 성공 User ID: {}", request.loginId());
 
         ResponseCookie cookie = createRefreshTokenCookie(tokens.refreshToken());
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         return ResponseEntity.ok(Map.of("accessToken", tokens.accessToken()));
-    }
-
-    // 비밀번호 기본 검증
-    private static void passwordValidate(String password) {
-        if (password == null || password.isBlank()) {
-            throw new IllegalArgumentException("[SYSTEM] 비밀번호가 입력되지 않았습니다.");
-        }
-        if (password.length() > 24) {
-            throw new IllegalArgumentException("[SYSTEM] 비밀번호 형식이 올바르지 않습니다.");
-        }
-    }
-
-    // 아이디 기본 검증
-    private static void idValidate(String loginId) {
-        if (loginId == null || loginId.isBlank()) {
-            throw new IllegalArgumentException("[SYSTEM] 값이 입력되지 않았습니다.");
-        }
-        if (loginId.length() > 20) {
-            throw new IllegalArgumentException("[SYSTEM] 아이디 형식이 올바르지 않습니다.");
-        }
     }
 
     @PostMapping("/logout")
@@ -88,19 +65,19 @@ public class AuthController {
                                           @CookieValue(name = "refreshToken", required = false) String refreshToken) {
         // 쿠키 유효성 검사
         if (refreshToken == null) {
-            throw new IllegalArgumentException("[SYSTEM] 리프레시 토큰이 존재하지 않습니다.");
+            throw new BadRequestException("리프레시 토큰이 존재하지 않습니다.");
         }
 
         // 헤더 유효성 검사
         if (authorizationHeader == null || !authorizationHeader.startsWith(TOKEN_HEADER)) {
-            throw new IllegalArgumentException("[SYSTEM] Access Token이 올바르지 않습니다.");
+            throw new BadRequestException("Access Token이 올바르지 않습니다.");
         }
 
         // 헤더에서 토큰 추출
         String accessToken = authorizationHeader.replace(TOKEN_HEADER, "");
 
         // 토큰 재발급 서비스 호출
-        LoginResponseDTO tokens = authService.refresh(accessToken, refreshToken);
+        LoginResponse tokens = authService.refresh(accessToken, refreshToken);
 
         // 새로운 리프레시 토큰 쿠키 생성
         ResponseCookie newRefreshCookie = createRefreshTokenCookie(tokens.refreshToken());
