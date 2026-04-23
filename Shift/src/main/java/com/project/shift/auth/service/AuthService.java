@@ -1,10 +1,10 @@
 package com.project.shift.auth.service;
 
-import com.project.shift.auth.dao.AuthDAO;
-import com.project.shift.auth.dto.LoginRequestDTO;
-import com.project.shift.auth.dto.LoginResponseDTO;
+import com.project.shift.auth.dto.request.LoginRequest;
+import com.project.shift.auth.dto.response.LoginResponse;
 import com.project.shift.auth.entity.RefreshTokenEntity;
 import com.project.shift.auth.repository.RefreshTokenRepository;
+import com.project.shift.global.exception.BadRequestException;
 import com.project.shift.global.exception.NotFoundException;
 import com.project.shift.global.jwt.JwtService;
 import com.project.shift.global.security.CurrentUser;
@@ -27,7 +27,6 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final AuthDAO authDao;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
@@ -35,7 +34,7 @@ public class AuthService {
 
     // 로그인
     @Transactional
-    public LoginResponseDTO login(LoginRequestDTO loginInfo) {
+    public LoginResponse login(LoginRequest loginInfo) {
         // 입력값 검증 수행
         UsernamePasswordAuthenticationToken cred = new UsernamePasswordAuthenticationToken(
                 loginInfo.loginId(),
@@ -47,7 +46,7 @@ public class AuthService {
 
         // dto -> entity로 변환
         UserEntity foundUser = userRepository.findByLoginId(loginInfo.loginId())
-                .orElseThrow(() -> new NotFoundException("[AUTH] 사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new NotFoundException("사용자를 찾을 수 없습니다."));
 
         Long userId = foundUser.getUserId();
         String name = foundUser.getName();
@@ -72,7 +71,7 @@ public class AuthService {
 
         log.info("[AUTH] 리프레시 토큰 갱신 완료 UserId: {}", userId);
 
-        return new LoginResponseDTO(accessToken, refreshToken);
+        return new LoginResponse(accessToken, refreshToken);
     }
 
     @Transactional
@@ -91,7 +90,7 @@ public class AuthService {
 
     // 토큰 재발급
     @Transactional
-    public LoginResponseDTO refresh(String accessToken, String refreshToken) {
+    public LoginResponse refresh(String accessToken, String refreshToken) {
         // refresh token 검증
         validateRefreshToken(refreshToken);
 
@@ -100,14 +99,14 @@ public class AuthService {
 
         // RefreshTokenEntity에서 검증
         RefreshTokenEntity storedToken = refreshTokenRepository.findByUser_UserId(userId)
-                .orElseThrow(() -> new BadCredentialsException("[SYSTEM] 저장된 리프레시 토큰이 없습니다."));
+                .orElseThrow(() -> new NotFoundException("저장된 리프레시 토큰이 없습니다."));
 
         if (!storedToken.getTokenValue().equals(refreshToken)) {
-            throw new BadCredentialsException("[SYSTEM] 리프레시 토큰이 일치하지 않습니다.");
+            throw new BadRequestException("리프레시 토큰이 일치하지 않습니다.");
         }
 
         UserEntity foundUser = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("[AUTH] 사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new NotFoundException("사용자를 찾을 수 없습니다."));
 
         String newAccessToken = jwtService.createAccessToken(foundUser.getUserId(), foundUser.getName());
         String newRefreshToken = jwtService.createRefreshToken(foundUser.getUserId());
@@ -116,31 +115,31 @@ public class AuthService {
         // 토큰 갱신
         storedToken.refreshToken(newRefreshToken, newExpiredAt);
 
-        return new LoginResponseDTO(newAccessToken, newRefreshToken);
+        return new LoginResponse(newAccessToken, newRefreshToken);
     }
 
     private void validateRefreshToken(String refreshToken) {
         // 토큰 유효성 체크
         if (!jwtService.isValidToken(refreshToken)) {
-            throw new BadCredentialsException("[SYSTEM] 유효하지 않은 리프레시 토큰입니다.");
+            throw new BadRequestException("유효하지 않은 리프레시 토큰입니다.");
         }
         // 토큰 타입이 refresh 인지 체크
         if (!jwtService.isRefreshToken(refreshToken)) {
-            throw new BadCredentialsException("[SYSTEM] 토큰 타입이 리프레시 토큰이 아닙니다.");
+            throw new BadRequestException("토큰 타입이 리프레시 토큰이 아닙니다.");
         }
     }
 
     private Long validateTokenPair(String accessToken, String refreshToken) {
         Long userIdFromAccess = jwtService.extractUserIdFromExpiredValidToken(accessToken);
         if (userIdFromAccess == null) {
-            throw new BadCredentialsException("[SYSTEM] 신뢰할 수 없는 엑세스 토큰입니다.");
+            throw new BadRequestException("신뢰할 수 없는 엑세스 토큰입니다.");
         }
 
         Long userIdFromRefresh = jwtService.extractUserIdFromValidToken(refreshToken);
 
         // 두 토큰의 짝이 맞는지 체크
         if (!userIdFromAccess.equals(userIdFromRefresh)) {
-            throw new BadCredentialsException("[SYSTEM] 토큰이 서로 일치하지 않습니다.");
+            throw new BadRequestException("토큰이 서로 일치하지 않습니다.");
         }
         return userIdFromRefresh;
     }
