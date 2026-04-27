@@ -1,5 +1,7 @@
-package com.project.shift.chat.dto;
+package com.project.shift.chat.dto.request;
 
+import com.project.shift.chat.dto.ChatroomUserDTO;
+import com.project.shift.chat.dto.MessageDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

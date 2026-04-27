@@ -1,4 +1,4 @@
-package com.project.shift.chat.dto;
+package com.project.shift.chat.dto.response;
 
 import java.util.Date;
 
