@@ -176,6 +176,7 @@ public interface ChatroomUserRepository extends JpaRepository<ChatroomUserEntity
     // -- 탈퇴 시 처리 --
     // 탈퇴 시 특정 사용자의 모든 채팅방 접속 상태를 DL로 변경
     @Modifying
+	@Transactional
     @Query(value = "UPDATE ChatroomUserEntity cu SET cu.connectionStatus = 'DL', cu.chatroomName = null WHERE cu.userId = :userId")
     void updateStatusToDeletedByUserId(@Param("userId") long userId);
 }

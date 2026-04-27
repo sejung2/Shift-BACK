@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.project.shift.chat.dto.FriendInfoDTO;
+import com.project.shift.chat.dto.response.FriendInfoDTO;
 import com.project.shift.chat.entity.FriendEntity;
 
 public interface FriendRepository extends JpaRepository<FriendEntity, Long>{
@@ -25,7 +25,7 @@ public interface FriendRepository extends JpaRepository<FriendEntity, Long>{
 				and f.user_id = :userId
 				and u.deleted_at is null
 			""", nativeQuery = true)
-	List<FriendInfoDTO> getFriendsList(@Param("userId") long userId);
+	List<FriendInfoDTO> getUserFriends(@Param("userId") long userId);
 
 	boolean existsByUserIdAndFriendId(long userId, long friendId);
 
