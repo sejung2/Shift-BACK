@@ -69,7 +69,7 @@ public interface ChatroomRepository extends JpaRepository<ChatroomEntity, Long>{
 		        cu_me.is_dark_mode as isDarkMode,
 		        lm.user_id as lastMsgSender,
 		        cu_other.user_id as receiverId,
-		        u.name as receiverName
+		        u.name as receiverName,
 		        c.last_msg_content as lastMsgContent,
 		        c.last_msg_date as lastMsgDate
 		    from chatroom_users cu_me
