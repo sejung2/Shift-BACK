@@ -1,55 +1,36 @@
 package com.project.shift.chat.entity;
 
-import com.project.shift.chat.dto.FriendDTO;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.SequenceGenerator;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import com.project.shift.chat.dto.request.FriendDTO;
+import com.project.shift.user.entity.UserEntity;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
 @Table(name = "FRIENDS")
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 public class FriendEntity {
 
     @Id
     @GeneratedValue(
-        strategy = GenerationType.SEQUENCE,
-        generator = "SEQ_FRIENDS"
+            strategy = GenerationType.SEQUENCE,
+            generator = "SEQ_FRIENDS"
     )
     @SequenceGenerator(
-        name = "SEQ_FRIENDS",
-        sequenceName = "SEQ_FRIENDS",
-        allocationSize = 1
+            name = "SEQ_FRIENDS",
+            sequenceName = "SEQ_FRIENDS",
+            allocationSize = 1
     )
     @Column(name = "FRIENDSHIP_ID")
-    private long friendshipId;
+    private Long friendshipId;
 
-    @Setter
-    @Column(name = "USER_ID")
-    private long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "USER_ID", nullable = false)
+    private UserEntity user;
 
-    @Setter
-    @Column(name = "FRIEND_ID")
-    private long friendId;
-
-    // DTO → Entity 변환
-    public static FriendEntity toEntity(FriendDTO dto) {
-        return FriendEntity.builder()
-                .friendshipId(dto.getFriendshipId())
-                .userId(dto.getUserId())
-                .friendId(dto.getFriendId())
-                .build();
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "FRIEND_ID", nullable = false)
+    private UserEntity friend;
 }
