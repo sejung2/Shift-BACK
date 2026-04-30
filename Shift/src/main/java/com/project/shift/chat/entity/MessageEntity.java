@@ -1,74 +1,49 @@
 package com.project.shift.chat.entity;
 
-import java.util.Date;
+import com.project.shift.user.entity.UserEntity;
+import jakarta.persistence.*;
+import lombok.*;
 
-import org.springframework.format.annotation.DateTimeFormat;
-
-import com.project.shift.chat.dto.MessageDTO;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.SequenceGenerator;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
 
 @Entity
-@Table(name="MESSAGES")
+@Table(name = "MESSAGES")
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 public class MessageEntity {
-    
-	@Id
+
+    @Id
     @GeneratedValue(
-        strategy = GenerationType.SEQUENCE,
-        generator = "SEQ_MESSAGES"
+            strategy = GenerationType.SEQUENCE,
+            generator = "SEQ_MESSAGES"
     )
     @SequenceGenerator(
-        name = "SEQ_MESSAGES",
-        sequenceName = "SEQ_MESSAGES",
-        allocationSize = 1
+            name = "SEQ_MESSAGES",
+            sequenceName = "SEQ_MESSAGES",
+            allocationSize = 1
     )
     @Column(name = "MESSAGE_ID", nullable = false)
-    private long messageId;
+    private Long messageId;
 
-    @Column(name = "CHATROOM_ID", nullable = false)
-    private long chatroomId;
-    
-    @Column(name = "USER_ID")
-    private long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "CHATROOM_ID", nullable = false)
+    private ChatroomEntity chatroom;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "USER_ID", nullable = false)
+    private UserEntity user;
 
     @Column(name = "SEND_DATE")
-    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date sendDate;
+    private LocalDateTime sendDate;
 
     @Column(name = "CONTENT", nullable = false, length = 300)
     private String content;
-    
+
     @Column(name = "IS_GIFT", nullable = false, length = 1, columnDefinition = "CHAR(1) default 'N'")
     private String isGift;
-    
+
     @Column(name = "UNREAD_COUNT", nullable = false)
     private int unreadCount;
-
-    // DTO -> Entity 변환
-    public static MessageEntity toEntity(MessageDTO dto) {
-        return MessageEntity.builder()
-                .messageId(dto.getMessageId())
-                .chatroomId(dto.getChatroomId())
-                .userId(dto.getUserId())
-                .sendDate(dto.getSendDate())
-                .content(dto.getContent())
-                .isGift(dto.getIsGift())
-                .unreadCount(dto.getUnreadCount())
-                .build();
-    }
-
 }
