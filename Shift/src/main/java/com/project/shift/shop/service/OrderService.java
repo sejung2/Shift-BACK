@@ -323,13 +323,13 @@ public class OrderService implements IOrderService {
                 .isGift("Y")
                 .type(MessageDTO.MessageType.CHAT)
                 .chatroomId(chatroomId)
-                .sendDate(new Date())
+                .sendDate(LocalDateTime.now())
                 .unreadCount(1)
                 .content(content)
                 .userId(userId)
                 .build();
 
-        ChatroomUserDTO chatroomUserDTO = chatroomUserService.getChatroomUser(chatroomId, userId).get();
+        ChatroomUserDTO chatroomUserDTO = chatroomUserService.getChatroomUser(chatroomId, userId);
         messageService.sendAndSaveMessage(messageDTO, chatroomUserDTO);
 
         return dto;
@@ -399,7 +399,7 @@ public class OrderService implements IOrderService {
         }
 
         int remainPoints = currentPoints - pointUsed;
-        sender.setPoints(remainPoints);
+        sender.updatePoints(remainPoints);
         userRepository.save(sender);
 
         order.setPointUsed(pointUsed);
@@ -569,7 +569,7 @@ public class OrderService implements IOrderService {
 
 	        int currentPoints = sender.getPoints() == null ? 0 : sender.getPoints();
 	        int newPoints = currentPoints + pointUsed;
-	        sender.setPoints(newPoints);
+	        sender.updatePoints(newPoints);
 	        userRepository.save(sender);
 
 	        order.setRemainPoints(newPoints);
@@ -639,7 +639,7 @@ public class OrderService implements IOrderService {
         int cashRefunded = cashUsed;
 
         int newPoints = currentPoints + pointRefunded;
-        sender.setPoints(newPoints);
+        sender.updatePoints(newPoints);
         userRepository.save(sender);
 
         // 5-1) 포인트 거래내역: 복원(R) 기록 

@@ -84,4 +84,8 @@ public class UserEntity {
         this.adminFlag = "N";
         this.deletedAt = LocalDateTime.now(); // 탈퇴 시점 기록
     }
+
+    public void updatePoints(int points) {
+        this.points = points;
+    }
 }

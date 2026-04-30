@@ -1,8 +1,8 @@
 package com.project.shift.user.service;
 
 import com.project.shift.auth.repository.RefreshTokenRepository;
-import com.project.shift.chat.dao.ChatroomUserDAO;
-import com.project.shift.chat.dao.FriendDAO;
+import com.project.shift.chat.repository.ChatroomUserRepository;
+import com.project.shift.chat.repository.FriendRepository;
 import com.project.shift.global.exception.BadRequestException;
 import com.project.shift.global.exception.ConflictException;
 import com.project.shift.global.exception.NotFoundException;
@@ -34,8 +34,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final CartDAO cartDAO;
-    private final FriendDAO friendDAO;
-    private final ChatroomUserDAO chatroomUserDAO;
+    private final FriendRepository friendRepository;
+    private final ChatroomUserRepository chatroomUserRepository;
     private final OrderRepository orderRepository;
     private final DeliveryRepository deliveryRepository;
     private final RefreshTokenRepository refreshTokenRepository;
@@ -176,8 +176,8 @@ public class UserService {
         }
 
         cartDAO.clearCartByUserId(userId); // 장바구니 비우기
-        friendDAO.deleteAllFriends(userId); // 친구 관계 삭제
-        chatroomUserDAO.deleteChatroomUsersByUserId(userId);
+        friendRepository.deleteFriendship(userId); // 친구 관계 삭제
+        chatroomUserRepository.updateStatusToDeletedByUserId(userId);
 
         refreshTokenRepository.deleteByUser_UserId(userId); // 리프레시 토큰 삭제
 
