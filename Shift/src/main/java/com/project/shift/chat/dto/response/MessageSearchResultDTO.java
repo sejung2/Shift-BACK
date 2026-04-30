@@ -1,14 +1,8 @@
 package com.project.shift.chat.dto.response;
 
-import java.util.Date;
+import lombok.*;
 
-import org.springframework.format.annotation.DateTimeFormat;
-
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor
@@ -16,19 +10,16 @@ import lombok.Setter;
 @Builder
 public class MessageSearchResultDTO {
 
-	private long chatroomUserId;
+    private long chatroomUserId;
     private long chatroomId;
-    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date lastConnectionTime;
-    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date createdTime;
+    private LocalDateTime lastConnectionTime;
+    private LocalDateTime createdTime;
     private String connectionStatus;
     private String isDarkMode;
     private String chatroomName;
     @Setter
     private int unreadCount;
     private String message;
-    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date sendDate;
+    private LocalDateTime sendDate;
     private long receiverId;
 }

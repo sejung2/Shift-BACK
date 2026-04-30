@@ -1,18 +1,29 @@
 package com.project.shift.chat.dto;
 
+import java.time.LocalDateTime;
+
 public interface ChatroomListProjection {
-	Long getChatroomUserId();
+    Long getChatroomUserId();
+
     Long getChatroomId();
+
     String getChatroomName();
+
     String getLastMsgContent();
 
     Long getLastMsgSender();
-    java.sql.Timestamp getLastMsgDate();
-    java.sql.Timestamp getLastConnectionTime();
-    java.sql.Timestamp getCreatedTime();
+
+    LocalDateTime getLastMsgDate();
+
+    LocalDateTime getLastConnectionTime();
+
+    LocalDateTime getCreatedTime();
 
     String getConnectionStatus();
+
     String getIsDarkMode();
+
     Long getReceiverId();
+
     String getReceiverName();
 }

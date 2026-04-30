@@ -16,13 +16,4 @@ public class FriendDTO {
     private long friendshipId; // PK
     private long userId;       // 사용자 ID
     private long friendId;     // 친구 ID
-
-    // Entity -> DTO 변환
-    public static FriendDTO toDto(FriendEntity entity) {
-        return FriendDTO.builder()
-                .friendshipId(entity.getFriendshipId())
-                .userId(entity.getUserId())
-                .friendId(entity.getFriendId())
-                .build();
-    }
 }
