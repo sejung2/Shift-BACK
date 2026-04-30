@@ -132,7 +132,7 @@ public class AuthService {
     private Long validateTokenPair(String accessToken, String refreshToken) {
         Long userIdFromAccess = jwtService.extractUserIdFromExpiredValidToken(accessToken);
         if (userIdFromAccess == null) {
-            throw new BadRequestException("신뢰할 수 없는 엑세스 토큰입니다.");
+            throw new BadRequestException("신뢰할 수 없는 액세스 토큰입니다.");
         }
 
         Long userIdFromRefresh = jwtService.extractUserIdFromValidToken(refreshToken);

@@ -39,7 +39,7 @@ public class GlobalExceptionHandler {
         return createProblemDetail(HttpStatus.CONFLICT, e.getMessage(), request);
     }
 
-    // 422 Unprocessable Entity (입력값 검증 실패)
+    // 400 Bad Request - Validation Errors
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ProblemDetail handleValidation(MethodArgumentNotValidException e, HttpServletRequest request) {
         String detail = e.getBindingResult().getFieldErrors().stream()
