@@ -27,10 +27,12 @@ public interface FriendRepository extends JpaRepository<FriendEntity, Long>{
 			""", nativeQuery = true)
 	List<FriendInfoDTO> getUserFriends(@Param("userId") long userId);
 
-	boolean existsByUserIdAndFriendId(long userId, long friendId);
+	boolean existsByUser_UserIdAndFriend_UserId(long userId, long friendId);
+
+	void deleteByUser_UserIdAndFriend_UserId(long userId, long friendId);
 
     // 친구 관계 삭제(탈퇴 시)
     @Modifying
-    @Query(value = "DELETE FROM FriendEntity f WHERE f.userId = :userId OR f.friendId = :userId")
+    @Query(value = "DELETE FROM FriendEntity f WHERE f.user.userId = :userId OR f.friend.userId = :userId")
     void deleteFriendship(@Param("userId") long userId);
 }
