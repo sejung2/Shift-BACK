@@ -7,8 +7,9 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.project.shift.chat.dto.response.FriendInfoDTO;
+import com.project.shift.chat.dto.response.FriendInfoResponse;
 import com.project.shift.chat.entity.FriendEntity;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface FriendRepository extends JpaRepository<FriendEntity, Long>{
 	
@@ -25,13 +26,14 @@ public interface FriendRepository extends JpaRepository<FriendEntity, Long>{
 				and f.user_id = :userId
 				and u.deleted_at is null
 			""", nativeQuery = true)
-	List<FriendInfoDTO> getUserFriends(@Param("userId") long userId);
+	List<FriendInfoResponse> getUserFriends(@Param("userId") long userId);
 
 	boolean existsByUser_UserIdAndFriend_UserId(long userId, long friendId);
 
 	void deleteByUser_UserIdAndFriend_UserId(long userId, long friendId);
 
     // 친구 관계 삭제(탈퇴 시)
+	@Transactional
     @Modifying
     @Query(value = "DELETE FROM FriendEntity f WHERE f.user.userId = :userId OR f.friend.userId = :userId")
     void deleteFriendship(@Param("userId") long userId);

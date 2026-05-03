@@ -1,9 +1,10 @@
 package com.project.shift.chat.service;
 
 import com.project.shift.chat.dto.*;
-import com.project.shift.chat.dto.request.DeletedChatroomUserInfoDTO;
-import com.project.shift.chat.dto.request.MessageWithSenderDTO;
-import com.project.shift.chat.dto.response.ChatroomListDTO;
+import com.project.shift.chat.dto.projection.ChatroomListProjection;
+import com.project.shift.chat.dto.request.DeletedChatroomUserInfoRequest;
+import com.project.shift.chat.dto.MessageWithSenderDTO;
+import com.project.shift.chat.dto.response.ChatroomListResponse;
 import com.project.shift.chat.entity.ChatroomUserEntity;
 import com.project.shift.chat.repository.ChatroomRepository;
 import com.project.shift.chat.repository.ChatroomUserRepository;
@@ -86,11 +87,11 @@ public class ChatroomUserService {
     }
 
     @Transactional(readOnly = true)
-    public ChatroomListDTO getChatroomListView(long chatroomUserId, long userId) {
+    public ChatroomListResponse getChatroomListView(long chatroomUserId, long userId) {
         ChatroomListProjection p = chatroomUserRepository.findChatroomByChatroomUserId(chatroomUserId)
                 .orElseThrow(() -> new NotFoundException("채팅방을 찾을 수 없습니다."));
 
-        ChatroomListDTO dto = ChatroomListDTO.builder()
+        ChatroomListResponse dto = ChatroomListResponse.builder()
                 .chatroomUserId(p.getChatroomUserId())
                 .chatroomId(p.getChatroomId())
                 .chatroomName(p.getChatroomName())
@@ -122,7 +123,7 @@ public class ChatroomUserService {
 
     // 채팅방 생성 시 두 사용자간 삭제된 채팅방 복구
     @Transactional
-    public void restoreChatroomBetweenUsers(DeletedChatroomUserInfoDTO dto) {
+    public void restoreChatroomBetweenUsers(DeletedChatroomUserInfoRequest dto) {
         LocalDateTime now = LocalDateTime.now();
         String senderChatroomName = dto.getReceiverName() + "님과의 채팅방";
         chatroomUserRepository.restoreChatroomUser(dto.getChatroomId(), dto.getSenderId(), "ON", now, senderChatroomName);

@@ -1,7 +1,7 @@
 package com.project.shift.chat.service;
 
-import com.project.shift.chat.dto.request.FriendDTO;
-import com.project.shift.chat.dto.response.FriendInfoDTO;
+import com.project.shift.chat.dto.request.FriendRequest;
+import com.project.shift.chat.dto.response.FriendInfoResponse;
 import com.project.shift.chat.entity.FriendEntity;
 import com.project.shift.chat.repository.FriendRepository;
 import com.project.shift.global.exception.NotFoundException;
@@ -20,12 +20,12 @@ public class FriendService {
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public List<FriendInfoDTO> getUserFriends(long userId) {
+    public List<FriendInfoResponse> getUserFriends(long userId) {
         return friendRepository.getUserFriends(userId);
     }
 
     @Transactional
-    public void addFriendship(FriendDTO dto) {
+    public void addFriendship(FriendRequest dto) {
         friendRepository.save(FriendEntity.builder()
                 .user(userRepository.getReferenceById(dto.getUserId()))
                 .friend(userRepository.getReferenceById(dto.getFriendId()))

@@ -1,9 +1,9 @@
 package com.project.shift.chat.controller;
 
-import com.project.shift.chat.dto.request.MessageWithSenderDTO;
-import com.project.shift.chat.dto.response.ChatroomDTO;
-import com.project.shift.chat.dto.response.ChatroomListDTO;
-import com.project.shift.chat.dto.response.MessageSearchResultDTO;
+import com.project.shift.chat.dto.MessageWithSenderDTO;
+import com.project.shift.chat.dto.response.ChatroomResponse;
+import com.project.shift.chat.dto.response.ChatroomListResponse;
+import com.project.shift.chat.dto.response.MessageSearchResultResponse;
 import com.project.shift.chat.service.ChatroomService;
 import com.project.shift.chat.service.ChatroomUserService;
 import com.project.shift.chat.service.MessageService;
@@ -25,14 +25,14 @@ public class ChatroomController {
 
     // 사용자가 참여한 채팅방 목록 반환
     @GetMapping
-    public ResponseEntity<List<ChatroomListDTO>> getUserChatroomList() {
+    public ResponseEntity<List<ChatroomListResponse>> getUserChatroomList() {
         long userId = CurrentUser.getUserId();
         return ResponseEntity.ok(chatroomService.getUserChatrooms(userId));
     }
 
     // 특정 채팅방 반환
     @GetMapping("/{chatroomId}")
-    public ResponseEntity<ChatroomDTO> getChatroom(@PathVariable long chatroomId) {
+    public ResponseEntity<ChatroomResponse> getChatroom(@PathVariable long chatroomId) {
         return ResponseEntity.ok(chatroomService.getChatroom(chatroomId));
     }
 
@@ -83,14 +83,14 @@ public class ChatroomController {
      */
     // 채팅방 검색 - 1. 검색 키워드가 참여한 채팅 목록의 상대방 이름에 포함될 때
     @GetMapping("/search/name")
-    public ResponseEntity<List<ChatroomListDTO>> searchChatroomUsersName(@RequestParam String input) {
+    public ResponseEntity<List<ChatroomListResponse>> searchChatroomUsersName(@RequestParam String input) {
         long userId = CurrentUser.getUserId();
         return ResponseEntity.ok(chatroomService.searchChatroomUsersName(input, userId));
     }
 
     // 채팅방 검색 - 2. 검색 키워드가 참여한 채팅방의 메시지 내용에 포함될 때
     @GetMapping("/search/messages")
-    public ResponseEntity<List<MessageSearchResultDTO>> searchChatroomMessages(@RequestParam String input) {
+    public ResponseEntity<List<MessageSearchResultResponse>> searchChatroomMessages(@RequestParam String input) {
         long userId = CurrentUser.getUserId();
         return ResponseEntity.ok(chatroomService.searchChatroomMessages(input, userId));
     }

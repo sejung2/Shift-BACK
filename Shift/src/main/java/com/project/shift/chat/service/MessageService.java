@@ -2,8 +2,8 @@ package com.project.shift.chat.service;
 
 import com.project.shift.chat.dto.ChatroomUserDTO;
 import com.project.shift.chat.dto.MessageDTO;
-import com.project.shift.chat.dto.request.MessageUserDTO;
-import com.project.shift.chat.dto.response.ChatroomListDTO;
+import com.project.shift.chat.dto.MessageUserDTO;
+import com.project.shift.chat.dto.response.ChatroomListResponse;
 import com.project.shift.chat.entity.MessageEntity;
 import com.project.shift.chat.repository.ChatUserRepository;
 import com.project.shift.chat.repository.ChatroomRepository;
@@ -51,7 +51,7 @@ public class MessageService {
 
     // 채팅방 최초 접속 시간 이후 모든 채팅방 메시지 반환
     @Transactional(readOnly = true)
-    public List<MessageDTO> getMessageHistory(ChatroomListDTO dto) {
+    public List<MessageDTO> getMessageHistory(ChatroomListResponse dto) {
         return messageRepository.findByChatroomId(dto.getChatroomId(), dto.getCreatedTime())
                 .stream()
                 .map(entity -> MessageDTO.builder()
