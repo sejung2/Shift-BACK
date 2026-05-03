@@ -1,4 +1,4 @@
-package com.project.shift.chat.dto;
+package com.project.shift.chat.dto.response;
 
 public record ChatUserSearchResponse(
         boolean ifFriend,

@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class DeletedChatroomUserInfoDTO {
+public class DeletedChatroomUserInfoRequest {
 
 	private long chatroomId;
 	private long senderId;
