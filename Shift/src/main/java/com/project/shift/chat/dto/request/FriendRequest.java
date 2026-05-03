@@ -1,7 +1,5 @@
 package com.project.shift.chat.dto.request;
 
-import com.project.shift.chat.entity.FriendEntity;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -11,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class FriendDTO {
+public class FriendRequest {
 
     private long friendshipId; // PK
     private long userId;       // 사용자 ID

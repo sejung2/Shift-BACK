@@ -8,13 +8,10 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ChatroomListDTO {
+public class MessageSearchResultResponse {
 
     private long chatroomUserId;
     private long chatroomId;
-    private long lastMsgSender;
-    private String lastMsgContent;
-    private LocalDateTime lastMsgDate;
     private LocalDateTime lastConnectionTime;
     private LocalDateTime createdTime;
     private String connectionStatus;
@@ -22,7 +19,7 @@ public class ChatroomListDTO {
     private String chatroomName;
     @Setter
     private int unreadCount;
+    private String message;
+    private LocalDateTime sendDate;
     private long receiverId;
-    private String receiverName;
-
 }
