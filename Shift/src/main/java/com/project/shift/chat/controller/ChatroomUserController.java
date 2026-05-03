@@ -1,8 +1,8 @@
 package com.project.shift.chat.controller;
 
 import com.project.shift.chat.dto.ChatroomUserDTO;
-import com.project.shift.chat.dto.request.DeletedChatroomUserInfoDTO;
-import com.project.shift.chat.dto.response.ChatroomListDTO;
+import com.project.shift.chat.dto.request.DeletedChatroomUserInfoRequest;
+import com.project.shift.chat.dto.response.ChatroomListResponse;
 import com.project.shift.chat.service.ChatroomUserService;
 import com.project.shift.global.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
@@ -26,14 +26,14 @@ public class ChatroomUserController {
 
     // CHATROOM-08 : 특정 채팅방 정보 반환
     @GetMapping("/{chatroomUserId}")
-    public ResponseEntity<ChatroomListDTO> getChatroomListView(@PathVariable long chatroomUserId) {
+    public ResponseEntity<ChatroomListResponse> getChatroomListView(@PathVariable long chatroomUserId) {
 		long userId = CurrentUser.getUserId();
 		return ResponseEntity.ok(chatroomUserService.getChatroomListView(chatroomUserId, userId));
     }
 
     // 채팅방 생성 시 두 사용자간 삭제된 채팅방 복구
     @PostMapping("/restore")
-    public ResponseEntity<Void> restoreChatroomBetweenUsers(@RequestBody DeletedChatroomUserInfoDTO dto) {
+    public ResponseEntity<Void> restoreChatroomBetweenUsers(@RequestBody DeletedChatroomUserInfoRequest dto) {
         chatroomUserService.restoreChatroomBetweenUsers(dto);
 		return ResponseEntity.ok().build();
     }

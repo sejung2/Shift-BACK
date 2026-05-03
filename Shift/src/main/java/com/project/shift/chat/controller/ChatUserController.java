@@ -1,6 +1,6 @@
 package com.project.shift.chat.controller;
 
-import com.project.shift.chat.dto.ChatUserSearchResponse;
+import com.project.shift.chat.dto.response.ChatUserSearchResponse;
 import com.project.shift.chat.dto.ChatroomUserDTO;
 import com.project.shift.chat.dto.response.ChatUserMyPageInfoResponse;
 import com.project.shift.chat.service.ChatUserService;

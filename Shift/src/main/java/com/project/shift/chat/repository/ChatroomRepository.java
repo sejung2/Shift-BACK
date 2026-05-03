@@ -1,7 +1,7 @@
 package com.project.shift.chat.repository;
 
-import com.project.shift.chat.dto.ChatroomListProjection;
-import com.project.shift.chat.dto.MessageSearchResultProjection;
+import com.project.shift.chat.dto.projection.ChatroomListProjection;
+import com.project.shift.chat.dto.projection.MessageSearchResultProjection;
 import com.project.shift.chat.entity.ChatroomEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;

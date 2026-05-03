@@ -1,8 +1,8 @@
 package com.project.shift.chat.controller;
 
 import com.project.shift.chat.dto.MessageDTO;
-import com.project.shift.chat.dto.request.MessageUserDTO;
-import com.project.shift.chat.dto.response.ChatroomListDTO;
+import com.project.shift.chat.dto.MessageUserDTO;
+import com.project.shift.chat.dto.response.ChatroomListResponse;
 import com.project.shift.chat.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +33,7 @@ public class MessageController {
 
     // 채팅방 최초 생성 시간 이후의 채팅 메시지 기록 반환
     @PostMapping("/history")
-    public List<MessageDTO> getMessageHistory(@RequestBody ChatroomListDTO chatroomListDto) {
+    public List<MessageDTO> getMessageHistory(@RequestBody ChatroomListResponse chatroomListDto) {
         return messageService.getMessageHistory(chatroomListDto);
     }
 

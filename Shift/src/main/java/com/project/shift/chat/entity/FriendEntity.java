@@ -1,6 +1,5 @@
 package com.project.shift.chat.entity;
 
-import com.project.shift.chat.dto.request.FriendDTO;
 import com.project.shift.user.entity.UserEntity;
 import jakarta.persistence.*;
 import lombok.*;
