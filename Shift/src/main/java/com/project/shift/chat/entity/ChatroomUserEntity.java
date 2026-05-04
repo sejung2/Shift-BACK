@@ -3,10 +3,8 @@ package com.project.shift.chat.entity;
 import com.project.shift.user.entity.UserEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Entity
 @Table(name = "CHATROOM_USERS")
@@ -41,7 +39,6 @@ public class ChatroomUserEntity {
     private String chatroomName;
 
     @Column(name = "LAST_CONNECTION_TIME")
-    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime lastConnectionTime;
 
     @Column(name = "CREATED_TIME")
