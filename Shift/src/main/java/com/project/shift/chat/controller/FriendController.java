@@ -4,6 +4,7 @@ import com.project.shift.chat.dto.request.FriendRequest;
 import com.project.shift.chat.dto.response.FriendInfoResponse;
 import com.project.shift.chat.service.FriendService;
 import com.project.shift.global.security.CurrentUser;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +27,7 @@ public class FriendController {
 
     // 친구 추가
     @PostMapping
-    public ResponseEntity<Void> addFriendship(@RequestBody FriendRequest friendInfo) {
+    public ResponseEntity<Void> addFriendship(@RequestBody @Valid FriendRequest friendInfo) {
         friendService.addFriendship(friendInfo);
         return ResponseEntity.ok().build();
     }

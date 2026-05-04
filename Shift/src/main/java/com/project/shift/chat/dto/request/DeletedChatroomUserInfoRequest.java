@@ -1,19 +1,17 @@
 package com.project.shift.chat.dto.request;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class DeletedChatroomUserInfoRequest {
-
-	private long chatroomId;
-	private long senderId;
-	private long receiverId;
-	private String senderName;
-	private String receiverName;
-}
+public record DeletedChatroomUserInfoRequest(
+        @NotNull
+        Long chatroomId,
+        @NotNull
+        Long senderId,
+        @NotNull
+        Long receiverId,
+        @NotBlank
+        String senderName,
+        @NotBlank
+        String receiverName
+) {}

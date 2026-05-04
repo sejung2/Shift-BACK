@@ -27,8 +27,8 @@ public class FriendService {
     @Transactional
     public void addFriendship(FriendRequest dto) {
         friendRepository.save(FriendEntity.builder()
-                .user(userRepository.getReferenceById(dto.getUserId()))
-                .friend(userRepository.getReferenceById(dto.getFriendId()))
+                .user(userRepository.getReferenceById(dto.userId()))
+                .friend(userRepository.getReferenceById(dto.friendId()))
                 .build());
     }
 
