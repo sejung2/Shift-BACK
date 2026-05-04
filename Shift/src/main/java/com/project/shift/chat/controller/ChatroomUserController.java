@@ -5,6 +5,7 @@ import com.project.shift.chat.dto.request.DeletedChatroomUserInfoRequest;
 import com.project.shift.chat.dto.response.ChatroomListResponse;
 import com.project.shift.chat.service.ChatroomUserService;
 import com.project.shift.global.security.CurrentUser;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,7 +34,7 @@ public class ChatroomUserController {
 
     // 채팅방 생성 시 두 사용자간 삭제된 채팅방 복구
     @PostMapping("/restore")
-    public ResponseEntity<Void> restoreChatroomBetweenUsers(@RequestBody DeletedChatroomUserInfoRequest dto) {
+    public ResponseEntity<Void> restoreChatroomBetweenUsers(@RequestBody @Valid DeletedChatroomUserInfoRequest dto) {
         chatroomUserService.restoreChatroomBetweenUsers(dto);
 		return ResponseEntity.ok().build();
     }
