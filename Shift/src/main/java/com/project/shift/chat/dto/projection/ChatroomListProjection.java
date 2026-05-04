@@ -26,4 +26,6 @@ public interface ChatroomListProjection {
     Long getReceiverId();
 
     String getReceiverName();
+
+    Integer getUnreadCount();
 }
