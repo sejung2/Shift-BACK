@@ -102,7 +102,7 @@ public class ChatroomService {
                     .receiverName(p.getReceiverName())
                     .build();
             // unreadCount 계산
-            dto.setUnreadCount(messageRepository.countUnreadMessages(p.getChatroomId(), userId));
+            dto.setUnreadCount(p.getUnreadCount());
 
             return dto;
         }).toList();

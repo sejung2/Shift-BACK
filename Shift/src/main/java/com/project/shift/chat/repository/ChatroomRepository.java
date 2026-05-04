@@ -28,10 +28,16 @@ public interface ChatroomRepository extends JpaRepository<ChatroomEntity, Long> 
                 c.last_msg_date as lastMsgDate,
                 lm.user_id as lastMsgSender,
                 cu2.user_id as receiverId,
-                u.name as receiverName
+                u.name as receiverName,
+                (
+                    select count(*)
+                    from messages m
+                    where m.chatroom_id = cu.chatroom_id
+                      and m.send_date >= greatest(cu.last_connection_time, cu.created_time)
+                      and m.user_id <> :userId
+                ) as unreadCount
             from chatroom_users cu
-            join chatrooms c
-              on c.chatroom_id = cu.chatroom_id
+            join chatrooms c on c.chatroom_id = cu.chatroom_id
             left join (
                 select chatroom_id, user_id
                 from (
@@ -44,13 +50,11 @@ public interface ChatroomRepository extends JpaRepository<ChatroomEntity, Long> 
                     from messages m
                 )
                 where rn = 1
-            ) lm
-              on lm.chatroom_id = c.chatroom_id
+            ) lm on lm.chatroom_id = c.chatroom_id
             join chatroom_users cu2
               on cu2.chatroom_id = cu.chatroom_id
              and cu2.user_id != :userId
-            join users u
-              on u.user_id = cu2.user_id
+            join users u on u.user_id = cu2.user_id
             where cu.user_id = :userId
               and cu.connection_status != 'DL'
             """, nativeQuery = true)
@@ -59,42 +63,45 @@ public interface ChatroomRepository extends JpaRepository<ChatroomEntity, Long> 
     // 채팅방 검색 - 검색 키워드가 채팅 참여자 이름이라면 해당 참여자와의 채팅방 반환
     @Query(value = """
             select
-                   cu_me.chatroom_users_id as chatroomUserId,
-                   cu_me.chatroom_id as chatroomId,
-                   cu_me.chatroom_name as chatroomName,
-                   cu_me.last_connection_time as lastConnectionTime,
-                   cu_me.connection_status as connectionStatus,
-                   cu_me.created_time as createdTime,
-                   cu_me.is_dark_mode as isDarkMode,
-                   lm.user_id as lastMsgSender,
-                   cu_other.user_id as receiverId,
-                   u.name as receiverName,
-                   c.last_msg_content as lastMsgContent,
-                   c.last_msg_date as lastMsgDate
-               from chatroom_users cu_me
-               join chatroom_users cu_other
-                   on cu_me.chatroom_id = cu_other.chatroom_id
-                  and cu_other.user_id != :userId
-               join users u
-                   on u.user_id = cu_other.user_id
-               join chatrooms c
-                   on c.chatroom_id = cu_me.chatroom_id
-               left join (
-                   select m.chatroom_id, m.user_id
-                   from messages m
-                   where (m.chatroom_id, m.send_date) in (
-                       select chatroom_id, max(send_date)
-                       from messages
-                       group by chatroom_id
-                   )
-               ) lm
-                   on lm.chatroom_id = cu_me.chatroom_id
-               where cu_me.user_id = :userId
-                 and cu_me.connection_status != 'DL'
-                 and u.name like '%' || :keyword || '%'
+                cu_me.chatroom_users_id as chatroomUserId,
+                cu_me.chatroom_id as chatroomId,
+                cu_me.chatroom_name as chatroomName,
+                cu_me.last_connection_time as lastConnectionTime,
+                cu_me.connection_status as connectionStatus,
+                cu_me.created_time as createdTime,
+                cu_me.is_dark_mode as isDarkMode,
+                lm.user_id as lastMsgSender,
+                cu_other.user_id as receiverId,
+                u.name as receiverName,
+                c.last_msg_content as lastMsgContent,
+                c.last_msg_date as lastMsgDate,
+                (
+                    select count(*)
+                    from messages m
+                    where m.chatroom_id = cu_me.chatroom_id
+                      and m.send_date >= greatest(cu_me.last_connection_time, cu_me.created_time)
+                      and m.user_id <> :userId
+                ) as unreadCount
+            from chatroom_users cu_me
+            join chatroom_users cu_other
+                on cu_me.chatroom_id = cu_other.chatroom_id
+               and cu_other.user_id != :userId
+            join users u on u.user_id = cu_other.user_id
+            join chatrooms c on c.chatroom_id = cu_me.chatroom_id
+            left join (
+                select m.chatroom_id, m.user_id
+                from messages m
+                where (m.chatroom_id, m.send_date) in (
+                    select chatroom_id, max(send_date)
+                    from messages
+                    group by chatroom_id
+                )
+            ) lm on lm.chatroom_id = cu_me.chatroom_id
+            where cu_me.user_id = :userId
+              and cu_me.connection_status != 'DL'
+              and u.name like '%' || :keyword || '%'
             """, nativeQuery = true)
-    List<ChatroomListProjection> findChatroomUsersBySearchInput(@Param("keyword") String keyword,
-                                                                @Param("userId") long userId);
+    List<ChatroomListProjection> findChatroomUsersBySearchInput(@Param("keyword") String keyword, @Param("userId") long userId);
 
     // 채팅방 검색 - 검색 키워드가 포함된 메시지를 담고있는 채팅방 반환
     @Query(value = """
@@ -121,8 +128,7 @@ public interface ChatroomRepository extends JpaRepository<ChatroomEntity, Long> 
                  and m.content like '%' || :keyword || '%'
                  and m.is_gift = 'N'
             """, nativeQuery = true)
-    List<MessageSearchResultProjection> findChatroomMessagesBySearchInput(@Param("keyword") String keyword,
-                                                                          @Param("userId") long userId);
+    List<MessageSearchResultProjection> findChatroomMessagesBySearchInput(@Param("keyword") String keyword, @Param("userId") long userId);
 
     // 채팅 삭제 → 키값 빼고 초기화
     @Modifying
@@ -144,8 +150,6 @@ public interface ChatroomRepository extends JpaRepository<ChatroomEntity, Long> 
             	c.lastMsgDate = :date 
             WHERE c.chatroomId = :chatroomId
             """)
-    void updateLastMsgAndDate(@Param("chatroomId") long chatroomId,
-                              @Param("content") String content,
-                              @Param("date") LocalDateTime date);
+    void updateLastMsgAndDate(@Param("chatroomId") long chatroomId, @Param("content") String content, @Param("date") LocalDateTime date);
 
 }

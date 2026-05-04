@@ -105,7 +105,7 @@ public class ChatroomUserService {
                 .receiverName(p.getReceiverName())
                 .build();
 
-        dto.setUnreadCount(messageRepository.countUnreadMessages(p.getChatroomId(), userId));
+        dto.setUnreadCount(p.getUnreadCount());
         return dto;
     }
 
@@ -125,8 +125,8 @@ public class ChatroomUserService {
     @Transactional
     public void restoreChatroomBetweenUsers(DeletedChatroomUserInfoRequest dto) {
         LocalDateTime now = LocalDateTime.now();
-        String senderChatroomName = dto.getReceiverName() + "님과의 채팅방";
-        chatroomUserRepository.restoreChatroomUser(dto.getChatroomId(), dto.getSenderId(), "ON", now, senderChatroomName);
+        String senderChatroomName = dto.receiverName() + "님과의 채팅방";
+        chatroomUserRepository.restoreChatroomUser(dto.chatroomId(), dto.senderId(), "ON", now, senderChatroomName);
     }
 
     @Transactional

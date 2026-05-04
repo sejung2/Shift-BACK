@@ -151,24 +151,32 @@ public interface ChatroomUserRepository extends JpaRepository<ChatroomUserEntity
     // 채팅방 목록 조회
     @Query(value = """
             select
-            	cu.chatroom_users_id as chatroomUserId,
-            	cu.chatroom_id as chatroomId,
-            	cu.chatroom_name as chatroomName,
-            	cu.last_connection_time as lastConnectionTime,
-            	cu.connection_status as connectionStatus,
-            	cu.created_time as createdTime,
-            	cu.is_dark_mode as isDarkMode,
-            	c.last_msg_content as lastMsgContent,
-            	c.last_msg_date as lastMsgDate,
-            	cu2.user_id as receiverId,
-            	u.name as receiverName
-            from chatroom_users cu 
-            join chatrooms c ON c.chatroom_id = cu.chatroom_id
-            join chatroom_users cu2 on cu2.chatroom_id = cu.chatroom_id
-             						and cu2.chatroom_users_id != cu.chatroom_users_id
+                cu.chatroom_users_id as chatroomUserId,
+                cu.chatroom_id as chatroomId,
+                cu.chatroom_name as chatroomName,
+                cu.last_connection_time as lastConnectionTime,
+                cu.connection_status as connectionStatus,
+                cu.created_time as createdTime,
+                cu.is_dark_mode as isDarkMode,
+                c.last_msg_content as lastMsgContent,
+                c.last_msg_date as lastMsgDate,
+                cu2.user_id as receiverId,
+                u.name as receiverName,
+                (
+                    select count(*)
+                    from messages m
+                    where m.chatroom_id = cu.chatroom_id
+                      and m.send_date >= greatest(cu.last_connection_time, cu.created_time)
+                      and m.user_id <> cu2.user_id
+                ) as unreadCount
+            from chatroom_users cu
+            join chatrooms c on c.chatroom_id = cu.chatroom_id
+            join chatroom_users cu2
+                on cu2.chatroom_id = cu.chatroom_id
+               and cu2.chatroom_users_id != cu.chatroom_users_id
             join users u on u.user_id = cu2.user_id
-            where cu.chatroom_users_id = :id 
-            	and cu.connection_status != 'DL'
+            where cu.chatroom_users_id = :id
+              and cu.connection_status != 'DL'
             """, nativeQuery = true)
     Optional<ChatroomListProjection> findChatroomByChatroomUserId(@Param("id") long id);
 
