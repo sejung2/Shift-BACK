@@ -1,38 +1,43 @@
 package com.project.shift.chat.service;
 
-import java.util.List;
-
+import com.project.shift.chat.dto.request.FriendRequest;
+import com.project.shift.chat.dto.response.FriendInfoResponse;
+import com.project.shift.chat.entity.FriendEntity;
+import com.project.shift.chat.repository.FriendRepository;
+import com.project.shift.global.exception.NotFoundException;
+import com.project.shift.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.project.shift.chat.dao.FriendDAO;
-import com.project.shift.chat.dto.FriendDTO;
-import com.project.shift.chat.dto.FriendInfoDTO;
-import com.project.shift.chat.entity.FriendEntity;
-
-import lombok.RequiredArgsConstructor;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class FriendService {
 
-	private final FriendDAO dao;
-	
-	@Transactional(readOnly = true)
-	public List<FriendInfoDTO> getUserFriends(long userId){
-		return dao.getUserFriends(userId);
-	}
-	
-	@Transactional
-	public void addFriendship(FriendDTO dto) {
-		dao.saveFriendship(FriendEntity.toEntity(dto));
-		return;
-	}
-	
-	@Transactional
-	public boolean deleteFriend(long friendshipId) {
-		// 삭제된 행이 있으면 true 반환
-		return dao.deleteFriend(friendshipId);
-	}
+    private final FriendRepository friendRepository;
+    private final UserRepository userRepository;
+
+    @Transactional(readOnly = true)
+    public List<FriendInfoResponse> getUserFriends(long userId) {
+        return friendRepository.getUserFriends(userId);
+    }
+
+    @Transactional
+    public void addFriendship(FriendRequest dto) {
+        friendRepository.save(FriendEntity.builder()
+                .user(userRepository.getReferenceById(dto.userId()))
+                .friend(userRepository.getReferenceById(dto.friendId()))
+                .build());
+    }
+
+    @Transactional
+    public void deleteFriend(long userId, long friendId) {
+        if (!friendRepository.existsByUser_UserIdAndFriend_UserId(userId, friendId)) {
+            throw new NotFoundException("친구 관계를 찾을 수 없습니다.");
+        }
+        friendRepository.deleteByUser_UserIdAndFriend_UserId(userId, friendId);
+    }
 
 }
