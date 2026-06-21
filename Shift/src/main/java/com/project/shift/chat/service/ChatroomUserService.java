@@ -1,9 +1,9 @@
 package com.project.shift.chat.service;
 
-import com.project.shift.chat.dto.*;
+import com.project.shift.chat.dto.ChatroomUserDTO;
+import com.project.shift.chat.dto.MessageWithSenderDTO;
 import com.project.shift.chat.dto.projection.ChatroomListProjection;
 import com.project.shift.chat.dto.request.DeletedChatroomUserInfoRequest;
-import com.project.shift.chat.dto.MessageWithSenderDTO;
 import com.project.shift.chat.dto.response.ChatroomListResponse;
 import com.project.shift.chat.entity.ChatroomUserEntity;
 import com.project.shift.chat.repository.ChatroomRepository;
@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -107,11 +106,6 @@ public class ChatroomUserService {
 
         dto.setUnreadCount(p.getUnreadCount());
         return dto;
-    }
-
-    // Date 세팅
-    private Date toDate(java.sql.Timestamp ts) {
-        return ts != null ? new Date(ts.getTime()) : null;
     }
 
     @Transactional(readOnly = true)
