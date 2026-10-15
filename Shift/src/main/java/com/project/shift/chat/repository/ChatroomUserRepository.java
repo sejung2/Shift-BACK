@@ -167,7 +167,7 @@ public interface ChatroomUserRepository extends JpaRepository<ChatroomUserEntity
                     from messages m
                     where m.chatroom_id = cu.chatroom_id
                       and m.send_date >= greatest(cu.last_connection_time, cu.created_time)
-                      and m.user_id <> cu2.user_id
+                      and m.user_id <> cu.user_id
                 ) as unreadCount
             from chatroom_users cu
             join chatrooms c on c.chatroom_id = cu.chatroom_id
