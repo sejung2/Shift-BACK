@@ -1,0 +1,18 @@
+services:
+  oracle:
+    image: gvenzl/oracle-xe:21-slim-faststart
+    container_name: shift-oracle
+    ports:
+      - "1522:1521"
+    environment:
+      ORACLE_PASSWORD: oracle
+      APP_USER: test
+      APP_USER_PASSWORD: test
+    volumes:
+      - ./docker/oracle/init:/container-entrypoint-initdb.d
+
+  redis:
+    image: redis:7-alpine
+    container_name: shift-redis
+    ports:
+      - "6379:6379"
