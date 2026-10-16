@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -37,6 +38,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConflictException.class)
     public ProblemDetail handleConflict(ConflictException e, HttpServletRequest request) {
         return createProblemDetail(HttpStatus.CONFLICT, e.getMessage(), request);
+    }
+
+    // 409 Conflict - 낙관적 락 충돌
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ProblemDetail handleOptimisticLock(ObjectOptimisticLockingFailureException e, HttpServletRequest request) {
+        log.warn("[OPTIMISTIC LOCK] {} {}", request.getMethod(), request.getRequestURI());
+        return createProblemDetail(HttpStatus.CONFLICT, "다른 요청이 먼저 처리되었습니다. 잠시 후 다시 시도해 주세요.", request);
     }
 
     // 400 Bad Request - Validation Errors
