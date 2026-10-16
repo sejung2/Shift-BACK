@@ -12,6 +12,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.project.shift.global.exception.ConflictException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -372,6 +373,10 @@ public class OrderService implements IOrderService {
 
         if (uid != null && !order.getSenderId().equals(uid)) {
             throw new AccessDeniedException("본인 주문만 결제할 수 있습니다.");
+        }
+
+        if (!"P".equals(order.getOrderStatus())) {
+            throw new ConflictException("이미 결제되었거나 결제할 수 없는 주문입니다.");
         }
 
         int amount = requestDTO.getAmount();

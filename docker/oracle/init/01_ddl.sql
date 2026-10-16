@@ -105,6 +105,7 @@ CREATE TABLE orders
     remain_points NUMBER(20) DEFAULT 0,
     cash_used     NUMBER(20) DEFAULT 0,
     order_status  VARCHAR2(2) DEFAULT 'P' CHECK (order_status IN ('P', 'S', 'D', 'C')),
+    version       NUMBER(10) DEFAULT 0 NOT NULL,
     CONSTRAINT fk_orders_sender FOREIGN KEY (sender_id)
         REFERENCES users (user_id),
     CONSTRAINT fk_orders_receiver FOREIGN KEY (receiver_id)
