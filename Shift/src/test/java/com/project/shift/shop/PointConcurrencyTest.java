@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -31,7 +32,7 @@ public class PointConcurrencyTest {
     @Autowired
     OrderRepository orderRepository;
     @Autowired
-    PointTransactionRepository pointTransactionRepository; // ← 포인트 기록 정리용
+    PointTransactionRepository pointTransactionRepository; // 포인트 기록 정리용
 
     Long userId;
     List<Long> orderIds = new ArrayList<>();
@@ -59,18 +60,21 @@ public class PointConcurrencyTest {
     @AfterEach
     void tearDown() {
         pointTransactionRepository.deleteAll(
-                pointTransactionRepository.findByUserIdOrderByCreatedAtDesc(userId)); // ← 주문보다 먼저 삭제 (FK)
+                pointTransactionRepository.findByUserIdOrderByCreatedAtDesc(userId)); // 주문보다 먼저 삭제 (FK)
         orderRepository.deleteAllById(orderIds);
         userRepository.deleteById(userId);
         orderIds.clear();
     }
 
     @Test
-    @DisplayName("포인트 1000인 사용자가 100씩 10건 동시 결제하면 잔액이 0이 되어야 한다")
+    @DisplayName("동시 결제 시 성공한 건수만큼만 포인트가 차감되어야 한다")
     void concurrentPointPayment() throws InterruptedException {
         int threadCount = 10;
-        ExecutorService es = new ThreadPoolExecutor(threadCount, threadCount, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>()); // ←
-        CountDownLatch latch = new CountDownLatch(threadCount); // ←
+        ExecutorService es = new ThreadPoolExecutor(threadCount, threadCount, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        AtomicInteger successCount = new AtomicInteger();
+        AtomicInteger failCount = new AtomicInteger();
 
         for (Long orderId : orderIds) {
             es.submit(() -> {
@@ -81,7 +85,9 @@ public class PointConcurrencyTest {
                     paymentRequestDTO.setPointUsed(100);
 
                     orderService.requestPayment(paymentRequestDTO);
+                    successCount.incrementAndGet();
                 } catch (Exception e) {
+                    failCount.incrementAndGet();
                     System.out.println("실패: " + e.getMessage());
                 } finally {
                     latch.countDown();
@@ -89,13 +95,18 @@ public class PointConcurrencyTest {
             });
         }
 
-        latch.await();  // ← 10개 다 끝날 때까지 대기
-        es.shutdown();  // ← 그다음 스레드 풀 정리
+        latch.await();  // 10개 다 끝날 때까지 대기
+        es.shutdown();  // 그다음 스레드 풀 정리
 
-        UserEntity user = userRepository.findById(userId).orElseThrow(); // ← DB에서 다시 조회
-        int points = user.getPoints();                                   // ←
-        System.out.println("남은 포인트 = " + points);                    // ←
+        UserEntity user = userRepository.findById(userId).orElseThrow(); // DB에서 다시 조회
+        int points = user.getPoints();
+        System.out.println("성공 = " + successCount.get() + ", 실패 = " + failCount.get());
+        System.out.println("남은 포인트 = " + points);
 
-        assertThat(points).isEqualTo(0);
+        assertThat(successCount.get()).isGreaterThanOrEqualTo(1);                 // 최소 1건은 결제돼야 함
+        assertThat(successCount.get() + failCount.get()).isEqualTo(threadCount);  // 10건 다 처리됐는지
+        assertThat(points).isEqualTo(1000 - successCount.get() * 100);            // 성공한 만큼만 차감
+        assertThat(pointTransactionRepository.findByUserIdOrderByCreatedAtDesc(userId).size())
+                .isEqualTo(successCount.get());                                   // 포인트 사용 기록 수 = 성공 수
     }
 }

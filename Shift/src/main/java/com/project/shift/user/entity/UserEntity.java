@@ -55,6 +55,10 @@ public class UserEntity {
     @Column(name = "DELETED_AT")
     private LocalDateTime deletedAt;
 
+    @Version
+    @Column(name = "VERSION")
+    private Long version;
+
     @Builder
     public UserEntity(String loginId, String password, String name, String phone, String address) {
         this.loginId = loginId;
