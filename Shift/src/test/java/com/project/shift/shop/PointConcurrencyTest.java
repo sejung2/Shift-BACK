@@ -109,4 +109,37 @@ public class PointConcurrencyTest {
         assertThat(pointTransactionRepository.findByUserIdOrderByCreatedAtDesc(userId).size())
                 .isEqualTo(successCount.get());                                   // 포인트 사용 기록 수 = 성공 수
     }
+
+    @Test
+    @DisplayName("같은 주문에 동시에 결제 요청이 여러 번 와도 한 번만 결제되어야 한다")
+    void duplicatePaymentOnSameOrder() throws InterruptedException {
+        int threadCount = 10;
+        Long orderId = orderIds.get(0);   // 주문 하나만 사용
+        ExecutorService es = new ThreadPoolExecutor(threadCount, threadCount, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
+        CountDownLatch latch = new CountDownLatch(threadCount);
+        AtomicInteger successCount = new AtomicInteger();
+
+        for (int i = 0; i < threadCount; i++) {
+            es.submit(() -> {
+                try {
+                    PaymentRequestDTO dto = new PaymentRequestDTO();
+                    dto.setOrderId(orderId);
+                    dto.setAmount(100);
+                    dto.setPointUsed(0);   // 현금만
+                    orderService.requestPayment(dto);
+                    successCount.incrementAndGet();
+                } catch (Exception e) {
+                    System.out.println("실패: " + e.getMessage());
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+        es.shutdown();
+
+        System.out.println("성공 = " + successCount.get());
+        assertThat(successCount.get()).isEqualTo(1);
+    }
 }
