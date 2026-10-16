@@ -1,5 +1,6 @@
 package com.project.shift.shop;
 
+import com.project.shift.global.exception.ConflictException;
 import com.project.shift.product.repository.PointTransactionRepository;
 import com.project.shift.shop.dto.PaymentRequestDTO;
 import com.project.shift.shop.entity.Order;
@@ -21,6 +22,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 public class PointConcurrencyTest {
@@ -141,5 +143,20 @@ public class PointConcurrencyTest {
 
         System.out.println("성공 = " + successCount.get());
         assertThat(successCount.get()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("이미 결제된 주문은 다시 결제할 수 없다")
+    void cannotPayAlreadyPaidOrder() {
+        Long orderId = orderIds.get(0);
+        PaymentRequestDTO dto = new PaymentRequestDTO();
+        dto.setOrderId(orderId);
+        dto.setAmount(100);
+        dto.setPointUsed(0);
+
+        orderService.requestPayment(dto);   // 첫 번째: 성공해야 함
+
+        assertThatThrownBy(() -> orderService.requestPayment(dto))   // 두 번째: 예외가 나야 함
+                .isInstanceOf(ConflictException.class);
     }
 }
