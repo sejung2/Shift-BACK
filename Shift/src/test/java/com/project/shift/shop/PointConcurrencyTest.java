@@ -47,7 +47,7 @@ public class PointConcurrencyTest {
                 .password("test")
                 .name("테스터")
                 .build();
-        user.updatePoints(1000);
+        user.addPoints(1000);
         userId = userRepository.save(user).getUserId();
 
         for (int i = 0; i < 10; i++) {
