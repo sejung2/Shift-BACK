@@ -3,6 +3,7 @@ package com.project.shift.shop;
 import com.project.shift.global.exception.ConflictException;
 import com.project.shift.product.repository.PointTransactionRepository;
 import com.project.shift.shop.dto.PaymentRequestDTO;
+import com.project.shift.shop.dto.RefundRequestDTO;
 import com.project.shift.shop.entity.Order;
 import com.project.shift.shop.repository.OrderRepository;
 import com.project.shift.shop.service.OrderService;
@@ -158,5 +159,47 @@ public class PointConcurrencyTest {
 
         assertThatThrownBy(() -> orderService.requestPayment(dto))   // 두 번째: 예외가 나야 함
                 .isInstanceOf(ConflictException.class);
+    }
+
+    @Test
+    @DisplayName("같은 주문에 동시에 환불 요청이 여러 번 와도 한 번만 환불되어야 한다")
+    void duplicateRefundOnSameOrder() throws InterruptedException {
+        // 준비: 주문 하나를 포인트 100으로 결제 → 남은 포인트 900
+        Long orderId = orderIds.get(0);
+        PaymentRequestDTO payDto = new PaymentRequestDTO();
+        payDto.setOrderId(orderId);
+        payDto.setAmount(100);
+        payDto.setPointUsed(100);
+        orderService.requestPayment(payDto);
+
+        int threadCount = 10;
+        ExecutorService es = new ThreadPoolExecutor(threadCount, threadCount, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
+        CountDownLatch latch = new CountDownLatch(threadCount);
+        AtomicInteger successCount = new AtomicInteger();
+
+        for (int i = 0; i < threadCount; i++) {
+            es.submit(() -> {
+                try {
+                    RefundRequestDTO refundDto = new RefundRequestDTO();
+                    refundDto.setOrderId(orderId);
+                    refundDto.setAmount(100);          // 결제 금액과 같아야 함
+                    orderService.requestRefund(refundDto);
+                    successCount.incrementAndGet();
+                } catch (Exception e) {
+                    System.out.println("실패: " + e.getMessage());
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+        es.shutdown();
+
+        int points = userRepository.findById(userId).orElseThrow().getPoints();
+        System.out.println("환불 성공 = " + successCount.get() + ", 남은 포인트 = " + points);
+
+        assertThat(successCount.get()).isEqualTo(1);
+        assertThat(points).isEqualTo(1000);
     }
 }
