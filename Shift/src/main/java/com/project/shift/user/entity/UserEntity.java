@@ -1,5 +1,6 @@
 package com.project.shift.user.entity;
 
+import com.project.shift.global.exception.BadRequestException;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.SQLRestriction;
@@ -89,7 +90,22 @@ public class UserEntity {
         this.deletedAt = LocalDateTime.now(); // 탈퇴 시점 기록
     }
 
-    public void updatePoints(int points) {
-        this.points = points;
+    // 포인트 사용 (결제)
+    public void usePoints(int amount) {
+        if (amount <= 0) {
+            throw new BadRequestException("사용할 포인트는 0보다 커야 합니다.");
+        }
+        if (this.points < amount) {
+            throw new BadRequestException("보유 포인트가 부족합니다.");
+        }
+        this.points -= amount;
+    }
+
+    // 포인트 적립 (환불, 취소, 충전)
+    public void addPoints(int amount) {
+        if (amount <= 0) {
+            throw new BadRequestException("적립할 포인트는 0보다 커야 합니다.");
+        }
+        this.points += amount;
     }
 }

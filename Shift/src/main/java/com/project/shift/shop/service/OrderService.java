@@ -398,14 +398,10 @@ public class OrderService implements IOrderService {
         UserEntity sender = userRepository.findById(order.getSenderId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 사용자입니다."));
 
-        int currentPoints = (sender.getPoints() == null ? 0 : sender.getPoints());
-        if (pointUsed > currentPoints) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "보유 포인트가 부족합니다.");
+        if (pointUsed > 0) {
+            sender.usePoints(pointUsed);   // 잔액 검사 + 차감은 엔티티가
         }
-
-        int remainPoints = currentPoints - pointUsed;
-        sender.updatePoints(remainPoints);
-        userRepository.save(sender);
+        int remainPoints = sender.getPoints();
 
         order.setPointUsed(pointUsed);
         order.setCashUsed(cashAmount);
@@ -572,12 +568,8 @@ public class OrderService implements IOrderService {
 	        UserEntity sender = userRepository.findById(order.getSenderId())
 	                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
-	        int currentPoints = sender.getPoints() == null ? 0 : sender.getPoints();
-	        int newPoints = currentPoints + pointUsed;
-	        sender.updatePoints(newPoints);
-	        userRepository.save(sender);
-
-	        order.setRemainPoints(newPoints);
+            sender.addPoints(pointUsed);
+            order.setRemainPoints(sender.getPoints());
 
             // 포인트 거래내역: 복원(R) 기록
             PointTransaction cancelTx = new PointTransaction();
@@ -648,13 +640,13 @@ public class OrderService implements IOrderService {
         UserEntity sender = userRepository.findById(order.getSenderId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
-        int currentPoints = sender.getPoints() == null ? 0 : sender.getPoints();
         int pointRefunded = pointUsed;
         int cashRefunded = cashUsed;
 
-        int newPoints = currentPoints + pointRefunded;
-        sender.updatePoints(newPoints);
-        userRepository.save(sender);
+        if (pointRefunded > 0) {
+            sender.addPoints(pointRefunded);
+        }
+        int newPoints = sender.getPoints();
 
         // 5-1) 포인트 거래내역: 복원(R) 기록 
         PointTransaction refundTx = new PointTransaction();
