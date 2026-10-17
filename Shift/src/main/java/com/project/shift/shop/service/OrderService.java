@@ -578,6 +578,15 @@ public class OrderService implements IOrderService {
 	        userRepository.save(sender);
 
 	        order.setRemainPoints(newPoints);
+
+            // 포인트 거래내역: 복원(R) 기록
+            PointTransaction cancelTx = new PointTransaction();
+            cancelTx.setUserId(sender.getUserId());
+            cancelTx.setType("R");
+            cancelTx.setAmount(pointUsed);
+            cancelTx.setOrderId(order.getOrderId());
+            cancelTx.setCreatedAt(LocalDateTime.now());
+            pointTransactionRepository.save(cancelTx);
 	    }
 	    
 	    // TODO : cashUsed에 대해서는 실제 PG 연동 할건지?? 
