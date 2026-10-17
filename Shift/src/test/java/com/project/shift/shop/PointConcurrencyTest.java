@@ -1,5 +1,6 @@
 package com.project.shift.shop;
 
+import com.project.shift.global.exception.BadRequestException;
 import com.project.shift.global.exception.ConflictException;
 import com.project.shift.product.repository.PointTransactionRepository;
 import com.project.shift.shop.dto.PaymentRequestDTO;
@@ -15,6 +16,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.concurrent.DelegatingSecurityContextExecutorService;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -40,6 +45,17 @@ public class PointConcurrencyTest {
     Long userId;
     List<Long> orderIds = new ArrayList<>();
 
+    private void loginAs(Long userId) {
+        UsernamePasswordAuthenticationToken auth =
+                new UsernamePasswordAuthenticationToken(userId, null, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+    }
+
+    private ExecutorService newPool(int threadCount) {
+        return new DelegatingSecurityContextExecutorService(
+                new ThreadPoolExecutor(threadCount, threadCount, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>()));
+    }
+
     @BeforeEach
     void setUp() {
         UserEntity user = UserEntity.builder()
@@ -58,10 +74,13 @@ public class PointConcurrencyTest {
             order.setTotalPrice(100);
             orderIds.add(orderRepository.save(order).getOrderId());
         }
+
+        loginAs(userId);
     }
 
     @AfterEach
     void tearDown() {
+        SecurityContextHolder.clearContext();
         pointTransactionRepository.deleteAll(
                 pointTransactionRepository.findByUserIdOrderByCreatedAtDesc(userId)); // 주문보다 먼저 삭제 (FK)
         orderRepository.deleteAllById(orderIds);
@@ -73,7 +92,7 @@ public class PointConcurrencyTest {
     @DisplayName("동시 결제 시 성공한 건수만큼만 포인트가 차감되어야 한다")
     void concurrentPointPayment() throws InterruptedException {
         int threadCount = 10;
-        ExecutorService es = new ThreadPoolExecutor(threadCount, threadCount, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
+        ExecutorService es = newPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
 
         AtomicInteger successCount = new AtomicInteger();
@@ -118,7 +137,7 @@ public class PointConcurrencyTest {
     void duplicatePaymentOnSameOrder() throws InterruptedException {
         int threadCount = 10;
         Long orderId = orderIds.get(0);   // 주문 하나만 사용
-        ExecutorService es = new ThreadPoolExecutor(threadCount, threadCount, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
+        ExecutorService es = newPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
         AtomicInteger successCount = new AtomicInteger();
 
@@ -173,7 +192,7 @@ public class PointConcurrencyTest {
         orderService.requestPayment(payDto);
 
         int threadCount = 10;
-        ExecutorService es = new ThreadPoolExecutor(threadCount, threadCount, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
+        ExecutorService es = newPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
         AtomicInteger successCount = new AtomicInteger();
 
@@ -201,5 +220,46 @@ public class PointConcurrencyTest {
 
         assertThat(successCount.get()).isEqualTo(1);
         assertThat(points).isEqualTo(1000);
+    }
+
+    @Test
+    @DisplayName("로그인하지 않으면 결제할 수 없다")
+    void cannotPayWithoutLogin() {
+        SecurityContextHolder.clearContext();   // 로그인 안 한 상태
+
+        PaymentRequestDTO dto = new PaymentRequestDTO();
+        dto.setOrderId(orderIds.get(0));
+        dto.setAmount(100);
+        dto.setPointUsed(100);
+
+        assertThatThrownBy(() -> orderService.requestPayment(dto))
+                .isInstanceOf(BadRequestException.class);
+
+        int points = userRepository.findById(userId).orElseThrow().getPoints();
+        assertThat(points).isEqualTo(1000);    // 포인트 그대로
+    }
+
+    @Test
+    @DisplayName("다른 사용자의 주문은 환불할 수 없다")
+    void cannotRefundOthersOrder() {
+        // 준비: 본인이 포인트 100으로 결제 → 남은 포인트 900
+        Long orderId = orderIds.get(0);
+        PaymentRequestDTO payDto = new PaymentRequestDTO();
+        payDto.setOrderId(orderId);
+        payDto.setAmount(100);
+        payDto.setPointUsed(100);
+        orderService.requestPayment(payDto);
+
+        loginAs(-1L);   // 다른 사용자로 로그인
+
+        RefundRequestDTO refundDto = new RefundRequestDTO();
+        refundDto.setOrderId(orderId);
+        refundDto.setAmount(100);
+
+        assertThatThrownBy(() -> orderService.requestRefund(refundDto))
+                .isInstanceOf(AccessDeniedException.class);
+
+        int points = userRepository.findById(userId).orElseThrow().getPoints();
+        assertThat(points).isEqualTo(900);     // 환불 안 됨
     }
 }
