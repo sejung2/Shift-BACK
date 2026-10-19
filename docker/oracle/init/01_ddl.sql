@@ -5,13 +5,11 @@
 -- ============================================
 -- 3) SQL*Plus는 기본적으로 빈 줄을 만나면 문장 입력을 끊음
 --    (reviews, chatroom_users 등 테이블 정의 중간에 빈 줄이 있어서 필요)
-SET
-SQLBLANKLINES ON
+-- SET은 SQL*Plus 명령이라 한 줄로 유지해야 함 (코드 정리 금지)
+SET SQLBLANKLINES ON
 
-ALTER
-SESSION SET CONTAINER = XEPDB1;
-ALTER
-SESSION SET CURRENT_SCHEMA = TEST;
+ALTER SESSION SET CONTAINER = XEPDB1;
+ALTER SESSION SET CURRENT_SCHEMA = TEST;
 
 -- ============================================
 -- Oracle DDL - 쇼핑몰 데이터베이스
@@ -43,8 +41,7 @@ CREATE TABLE friends
         REFERENCES users (user_id) ON DELETE CASCADE,
     CONSTRAINT fk_friends_friend FOREIGN KEY (friend_id)
         REFERENCES users (user_id) ON DELETE CASCADE,
-    CONSTRAINT chk_friends_not_self CHECK (user_id != friend_id
-)
+    CONSTRAINT chk_friends_not_self CHECK (user_id != friend_id)
     );
 
 -- 3. 카테고리 테이블
@@ -336,35 +333,19 @@ CREATE INDEX idx_friends_friend ON friends (friend_id);
 -- 주석 추가 (테이블 설명 문서화)
 -- ============================================
 
-COMMENT
-ON TABLE users IS '사용자 정보';
-COMMENT
-ON TABLE categories IS '상품 카테고리';
-COMMENT
-ON TABLE products IS '상품 정보';
-COMMENT
-ON TABLE images IS '상품 이미지';
-COMMENT
-ON TABLE cart_items IS '장바구니';
-COMMENT
-ON TABLE orders IS '주문 정보';
-COMMENT
-ON TABLE order_items IS '주문 상세 항목';
-COMMENT
-ON TABLE deliveries IS '배송 정보';
-COMMENT
-ON TABLE reviews IS '상품 리뷰';
-COMMENT
-ON TABLE chatrooms IS '채팅방';
-COMMENT
-ON TABLE Chatroom_Users IS '채팅방 유저';
-COMMENT
-ON TABLE messages IS '채팅 메시지';
-COMMENT
-ON TABLE Reply_Emoticons IS '메시지 이모티콘';
-COMMENT
-ON TABLE friends IS '친구 관계';
-COMMENT
-ON TABLE inquiries IS '고객 문의';
-COMMENT
-ON TABLE inquiry_replies IS '문의 답변';
+COMMENT ON TABLE users IS '사용자 정보';
+COMMENT ON TABLE categories IS '상품 카테고리';
+COMMENT ON TABLE products IS '상품 정보';
+COMMENT ON TABLE images IS '상품 이미지';
+COMMENT ON TABLE cart_items IS '장바구니';
+COMMENT ON TABLE orders IS '주문 정보';
+COMMENT ON TABLE order_items IS '주문 상세 항목';
+COMMENT ON TABLE deliveries IS '배송 정보';
+COMMENT ON TABLE reviews IS '상품 리뷰';
+COMMENT ON TABLE chatrooms IS '채팅방';
+COMMENT ON TABLE Chatroom_Users IS '채팅방 유저';
+COMMENT ON TABLE messages IS '채팅 메시지';
+COMMENT ON TABLE Reply_Emoticons IS '메시지 이모티콘';
+COMMENT ON TABLE friends IS '친구 관계';
+COMMENT ON TABLE inquiries IS '고객 문의';
+COMMENT ON TABLE inquiry_replies IS '문의 답변';
