@@ -1,5 +1,8 @@
 package com.project.shift.shop;
 
+import com.project.shift.global.exception.BadRequestException;
+import com.project.shift.shop.dto.OrderDTO;
+import com.project.shift.shop.dto.OrderItemDTO;
 import com.project.shift.shop.dto.PointOrderRequestDTO;
 import com.project.shift.shop.dto.PointOrderResponseDTO;
 import com.project.shift.shop.entity.Order;
@@ -21,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @Transactional
@@ -85,5 +89,20 @@ class OrderSenderTest {
 
         Order order = orderRepository.findById(response.getOrderId()).orElseThrow();
         assertThat(order.getSenderId()).isEqualTo(attackerId);
+    }
+
+    @Test
+    @DisplayName("로그인하지 않으면 요청에 senderId를 넣어도 주문을 만들 수 없다")
+    void cannotCreateOrderWithoutLogin() {
+        OrderDTO dto = new OrderDTO();
+        dto.setSenderId(victimId);  // 다른 사람 ID를 넣음
+
+        OrderItemDTO item = new OrderItemDTO();
+        item.setProductId(VOUCHER_PRODUCT_ID);
+        item.setQuantity(1);
+        dto.setItems(List.of(item));
+
+        assertThatThrownBy(() -> orderService.createOrder(dto))
+                .isInstanceOf(BadRequestException.class);
     }
 }
