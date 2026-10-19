@@ -69,9 +69,6 @@ public class OrderController {
     public ResponseEntity<PointOrderResponseDTO> createPointOrder(
             @RequestBody PointOrderRequestDTO dto) {
 
-        Long uid = getUserIdOrNull();
-        if (uid != null) dto.setSenderId(uid);
-
         return ResponseEntity.ok(orderService.createPointOrder(dto));
     }
     

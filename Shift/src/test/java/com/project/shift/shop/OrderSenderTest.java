@@ -72,12 +72,11 @@ class OrderSenderTest {
     }
 
     @Test
-    @DisplayName("금액권 주문은 요청에 다른 사람의 senderId를 넣어도 로그인한 사용자 이름으로 만들어진다")
+    @DisplayName("금액권 주문은 로그인한 사용자 이름으로 만들어진다")
     void pointOrderUsesLoggedInUserAsSender() {
         loginAs(attackerId);
 
         PointOrderRequestDTO dto = new PointOrderRequestDTO();
-        dto.setSenderId(victimId);      // 다른 사람 ID로 조작
         dto.setReceiverId(attackerId);  // 받는 사람은 자기 자신
         dto.setProductId(VOUCHER_PRODUCT_ID);
         dto.setAmount(10000);

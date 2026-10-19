@@ -670,12 +670,7 @@ public class OrderService implements IOrderService {
     @Transactional
     public PointOrderResponseDTO createPointOrder(PointOrderRequestDTO dto) {
 
-        Long senderId = dto.getSenderId();
-        if (senderId == null)
-            senderId = getUserIdOrNull();
-
-        if (senderId == null)
-            throw new IllegalArgumentException("로그인 후 이용 가능합니다.");
+        Long senderId = getUserId();
 
         Long chatroomId = null;
         Long receiverId = null;
