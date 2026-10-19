@@ -1,6 +1,7 @@
 package com.project.shift.shop;
 
 import com.project.shift.global.exception.BadRequestException;
+import com.project.shift.shop.controller.OrderController;
 import com.project.shift.shop.dto.OrderDTO;
 import com.project.shift.shop.dto.OrderItemDTO;
 import com.project.shift.shop.dto.PointOrderRequestDTO;
@@ -30,6 +31,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Transactional
 class OrderSenderTest {
 
+    @Autowired
+    OrderController orderController;
     @Autowired
     OrderService orderService;
     @Autowired
@@ -103,6 +106,13 @@ class OrderSenderTest {
         dto.setItems(List.of(item));
 
         assertThatThrownBy(() -> orderService.createOrder(dto))
+                .isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    @DisplayName("로그인하지 않으면 userId 파라미터로 남의 주문 목록을 조회할 수 없다")
+    void cannotGetOrdersWithoutLogin() {
+        assertThatThrownBy(() -> orderController.getOrders(victimId))
                 .isInstanceOf(BadRequestException.class);
     }
 }
