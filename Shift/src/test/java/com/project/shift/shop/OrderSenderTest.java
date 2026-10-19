@@ -112,7 +112,7 @@ class OrderSenderTest {
     @Test
     @DisplayName("로그인하지 않으면 userId 파라미터로 남의 주문 목록을 조회할 수 없다")
     void cannotGetOrdersWithoutLogin() {
-        assertThatThrownBy(() -> orderController.getOrders(victimId))
+        assertThatThrownBy(() -> orderController.getOrders())
                 .isInstanceOf(BadRequestException.class);
     }
 }

@@ -1,5 +1,6 @@
 package com.project.shift.shop.controller;
 
+import static com.project.shift.global.security.CurrentUser.getUserId;
 import static com.project.shift.global.security.CurrentUser.getUserIdOrNull;
 
 import org.springframework.http.ResponseEntity;
@@ -41,11 +42,8 @@ public class OrderController {
     
     //SHOP-007 주문 내역 조회
     @GetMapping
-    public ResponseEntity<OrderListResponseDTO> getOrders(@RequestParam(value="userId", required=false) Long userId) {
-        Long uid = getUserIdOrNull();
-        Long effectiveUserId = uid != null ? uid : userId;
-        if (effectiveUserId == null) throw new IllegalArgumentException("userId가 필요합니다. (JWT 또는 파라미터)");
-        return ResponseEntity.ok(orderService.getOrdersByUser(effectiveUserId));
+    public ResponseEntity<OrderListResponseDTO> getOrders() {
+        return ResponseEntity.ok(orderService.getOrdersByUser(getUserId()));
     }
     
     // SHOP-008	주문 상세 조회
