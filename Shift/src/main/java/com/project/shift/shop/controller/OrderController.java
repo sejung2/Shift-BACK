@@ -36,8 +36,6 @@ public class OrderController {
     // SHOP-006 주문 생성
     @PostMapping
     public ResponseEntity<OrderDTO> createOrder(@RequestBody OrderDTO request) {
-    	  Long uid = getUserIdOrNull();
-          if (uid != null) request.setSenderId(uid); 
           return ResponseEntity.ok(orderService.createOrder(request));
     }
     

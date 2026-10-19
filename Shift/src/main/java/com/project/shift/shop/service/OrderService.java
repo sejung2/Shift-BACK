@@ -81,13 +81,7 @@ public class OrderService implements IOrderService {
     @Override
     @Transactional
     public OrderDTO createOrder(OrderDTO orderDTO) {
-        Long uid = getUserIdOrNull();
-        if (uid != null) {
-            orderDTO.setSenderId(uid);
-        }
-        if (orderDTO.getSenderId() == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 후 주문할 수 있습니다.");
-        }
+        orderDTO.setSenderId(getUserId());
 
         // receiverId가 비어 있고, chatroomId가 있으면 채팅방에서 수령인 찾기
         if (orderDTO.getReceiverId() == null) {
