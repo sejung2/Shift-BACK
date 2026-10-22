@@ -1,9 +1,8 @@
 package com.project.shift.global.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.project.shift.auth.service.TokenBlacklistService;
 import com.project.shift.global.jwt.JwtService;
-import com.project.shift.user.entity.UserEntity;
-import com.project.shift.user.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,44 +27,48 @@ import java.util.Map;
 public class AuthenticationFilter extends OncePerRequestFilter { // 모든 API 요청마다 한 번만 실행됨
 
     private final JwtService jwtService;
-    private final UserRepository userRepository;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String token = jwtService.extractTokenFromRequest(request);
         Long userId = null;
 
-        if (token != null) {
-            // 토큰이 유효한지 검사
-            if (jwtService.isValidToken(token)) {
-                userId = jwtService.extractUserIdFromValidToken(token);
-            }
+        if (token != null && jwtService.isValidToken(token)) {
+            userId = jwtService.extractUserIdFromValidToken(token);
         }
 
-        if (userId != null) {
-            UserEntity userEntity = userRepository.findById(userId).orElse(null);
-
-            if (userEntity != null) {
-                Authentication authentication = new UsernamePasswordAuthenticationToken(userId, null, Collections.emptyList());
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-                filterChain.doFilter(request, response);
-            } else {
-                log.warn("[AUTH] 탈퇴했거나 존재하지 않는 사용자 userId: {}", userId);
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                response.setCharacterEncoding("UTF-8");
-
-                Map<String, Object> body = new HashMap<>();
-                body.put("status", 401);
-                body.put("error", "Unauthorized");
-                body.put("message", "탈퇴했거나 존재하지 않는 회원입니다.");
-                body.put("path", request.getServletPath());
-
-                new ObjectMapper().writeValue(response.getOutputStream(), body);
-            }
-        } else {
-            // 토큰이 없거나 만료된 경우 -> 다음 필터로 넘김
+        // 토큰이 없거나 만료된 경우 -> 다음 필터로 넘김
+        if (userId == null) {
             filterChain.doFilter(request, response);
+            return;
         }
+
+        // 로그아웃한 토큰이거나 탈퇴한 사용자면 막음
+        if (tokenBlacklistService.isBlacklisted(token, userId)) {
+            log.warn("[AUTH] 로그아웃했거나 탈퇴한 사용자의 토큰 userId: {}", userId);
+            writeError(response, request, HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized",
+                    "로그아웃했거나 탈퇴한 회원입니다.");
+            return;
+        }
+
+        Authentication authentication = new UsernamePasswordAuthenticationToken(userId, null, Collections.emptyList());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        filterChain.doFilter(request, response);
+    }
+
+    private void writeError(HttpServletResponse response, HttpServletRequest request,
+                            int status, String error, String message) throws IOException {
+        response.setStatus(status);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("status", status);
+        body.put("error", error);
+        body.put("message", message);
+        body.put("path", request.getServletPath());
+
+        new ObjectMapper().writeValue(response.getOutputStream(), body);
     }
 }
