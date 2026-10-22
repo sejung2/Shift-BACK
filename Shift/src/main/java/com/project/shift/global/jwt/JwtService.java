@@ -10,6 +10,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
@@ -131,5 +132,25 @@ public class JwtService {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    // 토큰이 만료될 때까지 남은 시간
+    public Duration getRemainingTime(String token) {
+        try {
+            Date expiration = Jwts.parserBuilder()
+                    .setSigningKey(secretKey)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody()
+                    .getExpiration();
+            return Duration.ofMillis(expiration.getTime() - System.currentTimeMillis());
+        } catch (ExpiredJwtException e) {
+            return Duration.ZERO; // 이미 만료됨
+        }
+    }
+
+    // Access Token 전체 수명
+    public Duration getAccessTokenValidity() {
+        return Duration.ofMillis(accessTokenValidityMs);
     }
 }
