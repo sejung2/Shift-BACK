@@ -1,11 +1,13 @@
 package com.project.shift.user.service;
 
 import com.project.shift.auth.repository.RefreshTokenRepository;
+import com.project.shift.auth.service.TokenBlacklistService;
 import com.project.shift.chat.repository.ChatroomUserRepository;
 import com.project.shift.chat.repository.FriendRepository;
 import com.project.shift.global.exception.BadRequestException;
 import com.project.shift.global.exception.ConflictException;
 import com.project.shift.global.exception.NotFoundException;
+import com.project.shift.global.jwt.JwtService;
 import com.project.shift.global.security.CurrentUser;
 import com.project.shift.shop.dao.CartDAO;
 import com.project.shift.shop.entity.Order;
@@ -39,6 +41,8 @@ public class UserService {
     private final OrderRepository orderRepository;
     private final DeliveryRepository deliveryRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final TokenBlacklistService tokenBlacklistService;
+    private final JwtService jwtService;
 
     @Transactional
     public Long join(SignUpRequest signUpRequest) {
@@ -185,6 +189,8 @@ public class UserService {
                 .orElseThrow(() -> new NotFoundException("사용자를 찾을 수 없습니다."));
 
         user.withDraw(); // 회원 탈퇴 처리 (정보 초기화 및 탈퇴 시점 기록)
+
+        tokenBlacklistService.blacklistUser(userId, jwtService.getAccessTokenValidity());
 
         // SecurityContext 초기화 (로그아웃 처리)
         SecurityContextHolder.clearContext();

@@ -41,8 +41,9 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout() {
-        authService.logout();
+    public ResponseEntity<?> logout(@RequestHeader(value = HEADER) String authorizationHeader) {
+        String accessToken = authorizationHeader.replace(TOKEN_HEADER, "");
+        authService.logout(accessToken);
 
         // 로그아웃 시 쿠키 삭제
         ResponseCookie deleteCookie = ResponseCookie.from("refreshToken", "")

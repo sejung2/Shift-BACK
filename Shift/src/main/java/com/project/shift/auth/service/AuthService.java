@@ -31,6 +31,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final TokenBlacklistService tokenBlacklistService;
 
     // 로그인
     @Transactional
@@ -75,13 +76,16 @@ public class AuthService {
     }
 
     @Transactional
-    public void logout() {
+    public void logout(String accessToken) {
         Long userId = CurrentUser.getUserId();
 
         log.info("[AUTH] 로그아웃 시작 UserId: {}", userId);
 
         // DB의 리프레시 토큰 삭제
         refreshTokenRepository.deleteByUser_UserId(userId);
+
+        // 이 Access Token은 남은 시간 동안 사용 못 하게 막음
+        tokenBlacklistService.blacklistToken(accessToken, jwtService.getRemainingTime(accessToken));
 
         SecurityContextHolder.clearContext();
 
