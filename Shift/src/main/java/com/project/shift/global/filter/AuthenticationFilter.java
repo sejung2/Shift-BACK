@@ -35,7 +35,7 @@ public class AuthenticationFilter extends OncePerRequestFilter { // 모든 API �
         String token = jwtService.extractTokenFromRequest(request);
         Long userId = null;
 
-        if (token != null && jwtService.isValidToken(token)) {
+        if (token != null && jwtService.isValidToken(token) && jwtService.isAccessToken(token)) {
             userId = jwtService.extractUserIdFromValidToken(token);
         }
 

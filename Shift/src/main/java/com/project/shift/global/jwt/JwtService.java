@@ -120,6 +120,20 @@ public class JwtService {
         }
     }
 
+    // 요청 인증용 Access Token인지 체크
+    public boolean isAccessToken(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(secretKey)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            return TOKEN_TYPE_ACCESS.equals(claims.get("type"));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     // 토큰 재발급 시 Refresh Token 인지 체크
     public boolean isRefreshToken(String token) {
         try {
