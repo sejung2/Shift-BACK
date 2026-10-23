@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -41,6 +42,17 @@ public class AuthenticationFilter extends OncePerRequestFilter { // 모든 API �
         // 토큰이 없거나 만료된 경우 -> 다음 필터로 넘김
         if (userId == null) {
             filterChain.doFilter(request, response);
+            return;
+        }
+
+        // Redis에 못 물어보면 막되, 401이 아니라 503으로 응답
+        boolean blacklisted;
+        try {
+            blacklisted = tokenBlacklistService.isBlacklisted(token, userId);
+        } catch (DataAccessException e) {
+            log.error("[AUTH] Redis 연결 실패로 블랙리스트 확인 불가 userId: {}", userId, e);
+            writeError(response, request, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Service Unavailable",
+                    "일시적으로 서비스를 이용할 수 없습니다. 잠시 후 다시 시도해 주세요.");
             return;
         }
 
