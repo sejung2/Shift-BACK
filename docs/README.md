@@ -2,9 +2,7 @@
 
 | 번호 | 주제 | 상태 |
 |---|---|---|
-| 01 | [테스트 환경 구성](./01-test-environment.md) | 작성 예정 |
-| 02 | [포인트 결제 갱신 손실 재현](./02-point-lost-update.md) | 완료 |
-| 03 | [갱신 손실 해결책 비교](./03-point-solutions.md) | 완료 |
-| 04 | [채팅방 N+1 해결](./04-chat-n-plus-one.md) | 작성 예정 |
-| 05 | [주문 API 인증 누락 보완](./05-order-auth-fail-open.md) | 완료 |
-| 06 | [로그아웃·탈퇴한 토큰 차단](./06-token-blacklist.md) | 작성 중 |
+| 01 | [포인트 결제 갱신 손실 재현](./01-point-lost-update.md) | 완료 |
+| 02 | [갱신 손실 해결책 비교](./02-point-solutions.md) | 완료 |
+| 03 | [주문 API 인증 누락 보완](./03-order-auth-fail-open.md) | 완료 |
+| 04 | [로그아웃·탈퇴한 토큰 차단](./04-token-blacklist.md) | 완료 |
