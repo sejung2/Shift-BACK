@@ -57,7 +57,7 @@ public class AuthenticationFilter extends OncePerRequestFilter { // 모든 API �
         }
 
         // 로그아웃한 토큰이거나 탈퇴한 사용자면 막음
-        if (tokenBlacklistService.isBlacklisted(token, userId)) {
+        if (blacklisted) {
             log.warn("[AUTH] 로그아웃했거나 탈퇴한 사용자의 토큰 userId: {}", userId);
             writeError(response, request, HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized",
                     "로그아웃했거나 탈퇴한 회원입니다.");

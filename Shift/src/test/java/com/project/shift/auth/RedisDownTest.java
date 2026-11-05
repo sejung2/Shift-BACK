@@ -14,6 +14,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.times;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -39,5 +41,18 @@ class RedisDownTest {
 
         mockMvc.perform(get("/orders").header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isServiceUnavailable());
+    }
+
+    @Test
+    @DisplayName("블랙리스트는 요청당 한 번만 확인한다")
+    void checksBlacklistOnlyOncePerRequest() throws Exception {
+        given(tokenBlacklistService.isBlacklisted(anyString(), anyLong())).willReturn(false);
+
+        String accessToken = jwtService.createAccessToken(1L, "테스터");
+
+        mockMvc.perform(get("/orders").header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk());
+
+        then(tokenBlacklistService).should(times(1)).isBlacklisted(anyString(), anyLong());
     }
 }
