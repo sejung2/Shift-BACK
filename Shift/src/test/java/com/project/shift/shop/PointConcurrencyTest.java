@@ -16,6 +16,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.concurrent.DelegatingSecurityContextExecutorService;
@@ -24,6 +25,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -96,7 +98,7 @@ public class PointConcurrencyTest {
         CountDownLatch latch = new CountDownLatch(threadCount);
 
         AtomicInteger successCount = new AtomicInteger();
-        AtomicInteger failCount = new AtomicInteger();
+        Queue<Exception> failures = new ConcurrentLinkedQueue<>();   // 실패한 예외를 모아 둠
 
         for (Long orderId : orderIds) {
             es.submit(() -> {
@@ -109,7 +111,7 @@ public class PointConcurrencyTest {
                     orderService.requestPayment(paymentRequestDTO);
                     successCount.incrementAndGet();
                 } catch (Exception e) {
-                    failCount.incrementAndGet();
+                    failures.add(e);
                     System.out.println("실패: " + e.getMessage());
                 } finally {
                     latch.countDown();
@@ -122,11 +124,13 @@ public class PointConcurrencyTest {
 
         UserEntity user = userRepository.findById(userId).orElseThrow(); // DB에서 다시 조회
         int points = user.getPoints();
-        System.out.println("성공 = " + successCount.get() + ", 실패 = " + failCount.get());
+        System.out.println("성공 = " + successCount.get() + ", 실패 = " + failures.size());
         System.out.println("남은 포인트 = " + points);
 
         assertThat(successCount.get()).isGreaterThanOrEqualTo(1);                 // 최소 1건은 결제돼야 함
-        assertThat(successCount.get() + failCount.get()).isEqualTo(threadCount);  // 10건 다 처리됐는지
+        assertThat(successCount.get() + failures.size()).isEqualTo(threadCount);  // 10건 다 처리됐는지
+        assertThat(failures).allSatisfy(e ->
+                assertThat(e).isInstanceOf(ObjectOptimisticLockingFailureException.class)); // 실패는 전부 낙관적 락 충돌
         assertThat(points).isEqualTo(1000 - successCount.get() * 100);            // 성공한 만큼만 차감
         assertThat(pointTransactionRepository.findByUserIdOrderByCreatedAtDesc(userId).size())
                 .isEqualTo(successCount.get());                                   // 포인트 사용 기록 수 = 성공 수
@@ -140,6 +144,7 @@ public class PointConcurrencyTest {
         ExecutorService es = newPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
         AtomicInteger successCount = new AtomicInteger();
+        Queue<Exception> failures = new ConcurrentLinkedQueue<>();
 
         for (int i = 0; i < threadCount; i++) {
             es.submit(() -> {
@@ -151,6 +156,7 @@ public class PointConcurrencyTest {
                     orderService.requestPayment(dto);
                     successCount.incrementAndGet();
                 } catch (Exception e) {
+                    failures.add(e);
                     System.out.println("실패: " + e.getMessage());
                 } finally {
                     latch.countDown();
@@ -161,6 +167,9 @@ public class PointConcurrencyTest {
         latch.await();
         es.shutdown();
 
+        assertThat(failures).hasSize(threadCount - 1);
+        assertThat(failures).allSatisfy(e ->
+                assertThat(e).isInstanceOfAny(ConflictException.class, ObjectOptimisticLockingFailureException.class));
         System.out.println("성공 = " + successCount.get());
         assertThat(successCount.get()).isEqualTo(1);
     }
