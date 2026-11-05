@@ -594,7 +594,7 @@ public class OrderService implements IOrderService {
 
         // 2) 상태 체크
         if (!"S".equals(order.getOrderStatus())) {
-            throw new IllegalArgumentException("결제 완료된 주문만 환불할 수 있습니다.");
+            throw new ConflictException("이미 환불되었거나 환불할 수 없는 주문입니다.");
         }
 
         // 3) 실제 결제 금액(현금 + 포인트)
