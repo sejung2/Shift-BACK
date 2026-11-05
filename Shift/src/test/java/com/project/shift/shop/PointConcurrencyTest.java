@@ -271,4 +271,24 @@ public class PointConcurrencyTest {
         int points = userRepository.findById(userId).orElseThrow().getPoints();
         assertThat(points).isEqualTo(900);     // 환불 안 됨
     }
+
+    @Test
+    @DisplayName("이미 환불된 주문은 다시 환불할 수 없다")
+    void cannotRefundAlreadyRefundedOrder() {
+        Long orderId = orderIds.get(0);
+        PaymentRequestDTO payDto = new PaymentRequestDTO();
+        payDto.setOrderId(orderId);
+        payDto.setAmount(100);
+        payDto.setPointUsed(100);
+        orderService.requestPayment(payDto);
+
+        RefundRequestDTO refundDto = new RefundRequestDTO();
+        refundDto.setOrderId(orderId);
+        refundDto.setAmount(100);
+
+        orderService.requestRefund(refundDto);   // 첫 번째: 성공해야 함
+
+        assertThatThrownBy(() -> orderService.requestRefund(refundDto))   // 두 번째: 409 예외가 나야 함
+                .isInstanceOf(ConflictException.class);
+    }
 }
