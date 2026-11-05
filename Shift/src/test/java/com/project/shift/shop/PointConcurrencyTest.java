@@ -204,6 +204,7 @@ public class PointConcurrencyTest {
         ExecutorService es = newPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
         AtomicInteger successCount = new AtomicInteger();
+        Queue<Exception> failures = new ConcurrentLinkedQueue<>();
 
         for (int i = 0; i < threadCount; i++) {
             es.submit(() -> {
@@ -214,6 +215,7 @@ public class PointConcurrencyTest {
                     orderService.requestRefund(refundDto);
                     successCount.incrementAndGet();
                 } catch (Exception e) {
+                    failures.add(e);
                     System.out.println("실패: " + e.getMessage());
                 } finally {
                     latch.countDown();
@@ -228,6 +230,9 @@ public class PointConcurrencyTest {
         System.out.println("환불 성공 = " + successCount.get() + ", 남은 포인트 = " + points);
 
         assertThat(successCount.get()).isEqualTo(1);
+        assertThat(failures).hasSize(threadCount - 1);
+        assertThat(failures).allSatisfy(e ->
+                assertThat(e).isInstanceOfAny(ConflictException.class, ObjectOptimisticLockingFailureException.class));
         assertThat(points).isEqualTo(1000);
     }
 
